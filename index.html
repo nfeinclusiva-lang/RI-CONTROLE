@@ -217,12 +217,23 @@ async function loadData() {
   document.getElementById('sync-info').className = 'sync-info';
 
   try {
-    // Proxy para contornar CORS ao abrir como arquivo local
-    const PROXY = 'https://corsproxy.io/?url=';
-    const url = PROXY + encodeURIComponent(CSV_URL);
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Erro HTTP ' + resp.status);
-    const text = await resp.text();
+    // Tenta direto primeiro (funciona em HTTPS), depois proxies como fallback
+    const attempts = [
+      u => u,
+      u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+      u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
+      u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+    ];
+    let resp = null, text = null, lastErr = 'Todos os proxies falharam';
+    for (const makeUrl of attempts) {
+      try {
+        const r = await fetch(makeUrl(CSV_URL));
+        if (r.ok) { resp = r; break; }
+        lastErr = 'Erro HTTP ' + r.status;
+      } catch(e) { lastErr = e.message; }
+    }
+    if (!resp) throw new Error(lastErr);
+    text = await resp.text();
     processCSV(text);
 
     document.getElementById('loading-state').style.display = 'none';
