@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Despesas — Termo de Fomento</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f5f7;color:#1a1a1a;font-size:14px}
+  .page{max-width:1100px;margin:0 auto;padding:24px 20px}
+
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
+  .topbar h1{font-size:18px;font-weight:600;color:#1a1a1a}
+  .topbar p{font-size:12px;color:#666;margin-top:3px}
+  .topbar-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{font-size:12px;padding:7px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#333;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit}
+  .btn:hover{background:#f0f0f0}
+  .btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}
+  .btn.primary:hover{background:#178a64}
+  .btn svg{flex-shrink:0}
+  .sync-info{font-size:11px;color:#aaa;margin-top:4px}
+  .sync-info.ok{color:#1D9E75}
+  .sync-info.err{color:#E24B4A}
+
+  /* Loading */
+  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px}
+  .spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:#1D9E75;border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading p{font-size:13px;color:#888}
+  .error-box{background:#FEE2E2;border:1px solid #FECACA;border-radius:10px;padding:20px;text-align:center;color:#991B1B;font-size:13px;margin-bottom:18px}
+  .error-box strong{display:block;margin-bottom:6px;font-size:14px}
+
+  /* Cards */
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+  @media(max-width:700px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #e5e7eb}
+  .card .lbl{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+  .card .val{font-size:20px;font-weight:600;color:#1a1a1a}
+  .card .sub{font-size:11px;color:#aaa;margin-top:3px}
+  .card.green .val{color:#1D9E75}
+  .card.amber .val{color:#BA7517}
+  .card.red .val{color:#E24B4A}
+
+  /* Alertas */
+  .alerts{margin-bottom:18px}
+  .alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:12.5px;line-height:1.5}
+  .alert-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+  .alert.warn{background:#FEF3E2;color:#7A4A00;border:1px solid #F9D89B}
+  .alert.warn .alert-icon{background:#BA7517;color:#fff}
+  .alert.ok{background:#EDFAF4;color:#1A5C3A;border:1px solid #A0DCC0}
+  .alert.ok .alert-icon{background:#1D9E75;color:#fff}
+  .alert.info{background:#F3F4F6;color:#555;border:1px solid #DDD}
+  .alert.info .alert-icon{background:#aaa;color:#fff}
+  .alert strong{display:block;font-weight:600;margin-bottom:1px}
+
+  /* Filtros */
+  .filters{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:18px;background:#fff;padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb}
+  .filters label{font-size:12px;color:#666;font-weight:500}
+  select{font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid #ccc;background:#fff;color:#333;cursor:pointer;font-family:inherit}
+
+  /* Charts */
+  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:600px){.charts-row{grid-template-columns:1fr}}
+  .chart-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px}
+  .chart-card.full{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:14px}
+  .ct{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:11px;color:#666}
+  .legend span{display:flex;align-items:center;gap:4px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+  canvas{display:block}
+
+  /* Tabela */
+  .table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:18px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{font-weight:600;color:#666;text-align:left;padding:6px 10px;border-bottom:1px solid #eee;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
+  td{padding:9px 10px;color:#1a1a1a;border-bottom:1px solid #f0f0f0}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:#fafafa}
+  .pill{display:inline-block;font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:500}
+  .pill.ok{background:#EDFAF4;color:#1A5C3A}
+  .pill.warn{background:#FEF3E2;color:#7A4A00}
+  .pill.zero{background:#F3F4F6;color:#777}
+  .pill.danger{background:#FEE2E2;color:#991B1B}
+  .pb-outer{height:6px;background:#F0F0F0;border-radius:3px;width:90px;display:inline-block;vertical-align:middle}
+  .pb-inner{height:6px;border-radius:3px;background:#1D9E75;display:block}
+  .pb-inner.warn{background:#BA7517}
+  .pb-inner.danger{background:#E24B4A}
+
+  .footer{text-align:center;font-size:11px;color:#bbb;margin-top:10px;padding-top:10px;border-top:1px solid #eee}
+
+  #main-content{display:none}
+
+  @media print{
+    body{background:#fff}
+    .btn,.filters,.topbar-btns{display:none!important}
+    .page{padding:0}
+    .card,.chart-card,.chart-card.full,.table-wrap{border:1px solid #ddd!important;break-inside:avoid}
+    .charts-row{grid-template-columns:1fr 1fr!important}
+  }
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <div class="topbar">
+    <div>
+      <h1>Controle de Despesas — Termo de Fomento</h1>
+      <p id="sub-title">Carregando dados...</p>
+      <div class="sync-info" id="sync-info">Aguardando sincronização...</div>
+    </div>
+    <div class="topbar-btns">
+      <button class="btn primary" onclick="loadData()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Atualizar
+      </button>
+      <button class="btn" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9H3V2z" stroke="#555" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M10 2v3h3" stroke="#555" stroke-width="1.3" fill="none"/><path d="M5 9h6M5 11.5h4" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>
+        Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div class="loading" id="loading-state">
+    <div class="spinner"></div>
+    <p>Buscando dados da planilha...</p>
+  </div>
+
+  <!-- Error state -->
+  <div id="error-state" style="display:none">
+    <div class="error-box">
+      <strong>Não foi possível carregar os dados</strong>
+      <span id="error-msg">Verifique se a planilha está publicada e tente novamente.</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div id="main-content">
+    <div class="cards" id="cards-wrap"></div>
+    <div class="alerts" id="alerts-wrap"></div>
+
+    <div class="filters">
+      <label>Parcela:</label>
+      <select id="sel-parcela" onchange="render()">
+        <option value="-1">Todas as parcelas (total)</option>
+      </select>
+      <label style="margin-left:8px">Categoria:</label>
+      <select id="sel-cat" onchange="render()">
+        <option value="-1">Todas as categorias</option>
+      </select>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="ct" id="bar-title">Orçado vs Gasto vs Saldo</div>
+        <div class="legend">
+          <span><i style="background:#3B8BD4"></i> Orçado</span>
+          <span><i style="background:#D85A30"></i> Gasto</span>
+          <span><i style="background:#1D9E75"></i> Saldo</span>
+        </div>
+        <canvas id="barCanvas" height="200"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="ct">Distribuição do orçamento total</div>
+        <div id="pie-legend" class="legend"></div>
+        <canvas id="pieCanvas" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card full">
+      <div class="ct">Saldo disponível por parcela</div>
+      <canvas id="lineCanvas" height="140"></canvas>
+    </div>
+
+    <div class="ct" style="margin-bottom:10px">Detalhamento por categoria</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Categoria</th><th>Orçado (total)</th><th>Gasto</th><th>Saldo</th><th>Execução</th><th>Status</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Atualizado em <span id="hoje"></span> · Controle de Despesas — Termo de Fomento</div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFi3VjsKJzLkXzjt9aWFLbtDQXdOZpvzgTcytq86Wil_qOzmLm-h_JkUJ-Dw4EP_rw6-ynEOVZec3/pub?gid=1079040709&single=true&output=csv';
+
+const cores = ['#3B8BD4','#1D9E75','#BA7517','#D85A30','#7F77DD'];
+let cats = [];
+let parcelas = [];
+
+// ── CSV PARSER ─────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n').map(l => l.split(',').map(c => c.trim().replace(/^"|"$/g, '')));
+  return lines;
+}
+
+function parseVal(str) {
+  if (!str) return 0;
+  // Remove R$, espaços, pontos de milhar, troca vírgula por ponto
+  const cleaned = str.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.').trim();
+  const v = parseFloat(cleaned);
+  return isNaN(v) ? 0 : v;
+}
+
+// ── LOAD DATA ──────────────────────────────────────────
+async function loadData() {
+  document.getElementById('loading-state').style.display = 'flex';
+  document.getElementById('main-content').style.display = 'none';
+  document.getElementById('error-state').style.display = 'none';
+  document.getElementById('sync-info').textContent = 'Sincronizando...';
+  document.getElementById('sync-info').className = 'sync-info';
+
+  try {
+    // Proxy para contornar CORS ao abrir como arquivo local
+    const PROXY = 'https://corsproxy.io/?url=';
+    const url = PROXY + encodeURIComponent(CSV_URL);
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Erro HTTP ' + resp.status);
+    const text = await resp.text();
+    processCSV(text);
+
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    document.getElementById('error-state').style.display = 'none';
+
+    const now = new Date();
+    document.getElementById('hoje').textContent = now.toLocaleString('pt-BR');
+    document.getElementById('sync-info').textContent = '✓ Sincronizado às ' + now.toLocaleTimeString('pt-BR');
+    document.getElementById('sync-info').className = 'sync-info ok';
+
+    render();
+  } catch(e) {
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('error-state').style.display = 'block';
+    document.getElementById('error-msg').textContent = e.message + '. Verifique se a planilha está publicada.';
+    document.getElementById('sync-info').textContent = '✗ Falha na sincronização';
+    document.getElementById('sync-info').className = 'sync-info err';
+  }
+}
+
+function processCSV(text) {
+  const rows = parseCSV(text);
+
+  // Detectar colunas de parcelas (linha 2 = cabeçalho)
+  // Linha index 1: Item, Parcela 01, Parcela 02, ..., TOTAL
+  const header = rows[1] || [];
+  parcelas = [];
+  const parcelaCols = []; // índices das colunas de parcela
+  header.forEach((h, i) => {
+    if (h.match(/parcela\s*\d+/i)) {
+      parcelas.push(h.trim());
+      parcelaCols.push(i);
+    }
+  });
+
+  // Montar estrutura de categorias
+  // Padrão: grupo de 3 linhas por categoria:
+  //   [nome] - PLANO DE TRABALHO  → orçado
+  //   [nome] - QUANTO JÁ GASTOU   → gasto
+  //   [nome] - SALDO SOBRANDO     → (ignorado, calculado)
+  // Linha de SALDO TOTAL GERAL → ignorar
+  cats = [];
+  let i = 2; // pular linhas 0 (título) e 1 (cabeçalho)
+  while (i < rows.length) {
+    const row = rows[i];
+    const item = (row[0] || '').trim();
+    if (!item || item.match(/saldo total geral/i)) { i++; continue; }
+
+    // Tentar identificar linha de orçado
+    if (item.match(/plano de trabalho/i)) {
+      // Extrair nome da categoria (tudo antes do " - PLANO")
+      const nome = item.replace(/\s*[-–]\s*plano de trabalho.*/i, '').trim();
+      const orcado = parcelaCols.map(ci => parseVal(row[ci]));
+
+      // Próxima linha: gasto
+      const rowG = rows[i + 1] || [];
+      const gasto = parcelaCols.map(ci => parseVal(rowG[ci]));
+
+      cats.push({ nome, orcado, gasto });
+      i += 3; // pula orçado + gasto + saldo
+      continue;
+    }
+    i++;
+  }
+
+  // Rebuild selects
+  const selP = document.getElementById('sel-parcela');
+  selP.innerHTML = '<option value="-1">Todas as parcelas (total)</option>';
+  parcelas.forEach((p, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = p; selP.appendChild(o);
+  });
+
+  const selC = document.getElementById('sel-cat');
+  selC.innerHTML = '<option value="-1">Todas as categorias</option>';
+  cats.forEach((c, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = c.nome; selC.appendChild(o);
+  });
+}
+
+// ── HELPERS ────────────────────────────────────────────
+function fmt(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pct(g,o){return o>0?Math.round(g/o*100):0}
+function sumCat(c,pi){
+  if(pi===-1) return{orc:c.orcado.reduce((a,b)=>a+b,0),gas:c.gasto.reduce((a,b)=>a+b,0)};
+  return{orc:c.orcado[pi]||0,gas:c.gasto[pi]||0};
+}
+
+// ── CANVAS ─────────────────────────────────────────────
+function clearCanvas(canvas){
+  const ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth||canvas.parentElement.clientWidth||400;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  return ctx;
+}
+
+function drawBar(canvasId, labels, datasets, maxVal){
+  const canvas=document.getElementById(canvasId);
+  const ctx=clearCanvas(canvas);
+  const W=canvas.width, H=canvas.height;
+  const pad={top:10,right:10,bottom:40,left:70};
+  const chartW=W-pad.left-pad.right;
+  const chartH=H-pad.top-pad.bottom;
+  const n=labels.length, ds=datasets.length;
+  const groupW=chartW/n;
+  const barW=Math.min(groupW/(ds+1),28);
+  const gap=2;
+  const scale=chartH/maxVal;
+  ctx.strokeStyle='#eee';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){
+    const y=pad.top+chartH-i*chartH/4;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='right';
+    const val=maxVal*i/4;
+    ctx.fillText(val>=1000?'R$'+(val/1000).toFixed(0)+'k':'R$'+val.toFixed(0),pad.left-4,y+3);
+  }
+  datasets.forEach((ds2,di)=>{
+    ctx.fillStyle=ds2.color;
+    ds2.data.forEach((val,i)=>{
+      const x=pad.left+(i+0.5)*groupW-(ds*barW+(ds-1)*gap)/2+di*(barW+gap);
+      const h=val*scale;
+      const y=pad.top+chartH-h;
+      ctx.beginPath();
+      const r=3;
+      ctx.moveTo(x+r,y);ctx.lineTo(x+barW-r,y);
+      ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+      ctx.lineTo(x+barW,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y);
+      ctx.closePath();ctx.fill();
+    });
+  });
+  ctx.fillStyle='#666';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
+  labels.forEach((lbl,i)=>{
+    const x=pad.left+(i+0.5)*groupW;
+    ctx.fillText(lbl.length>10?lbl.substring(0,9)+'…':lbl,x,H-pad.bottom+16);
+  });
+}
+
+function drawPie(canvasId, labels, values, colors){
+  const canvas=document.getElementById(canvasId);
+  const ctx=clearCanvas(canvas);
+  const W=canvas.width, H=canvas.height;
+  const cx=W/2, cy=H/2, r=Math.min(cx,cy)-20, inner=r*0.58;
+  const total=values.reduce((a,b)=>a+b,0);
+  let angle=-Math.PI/2;
+  values.forEach((v,i)=>{
+    const sweep=2*Math.PI*v/total;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+sweep);
+    ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    angle+=sweep;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,inner,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
+  ctx.fillStyle='#333';ctx.font='bold 13px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
+  ctx.fillText(fmt(total).replace('R$ ','R$'),cx,cy-2);
+  ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';
+  ctx.fillText('Total orçado',cx,cy+13);
+}
+
+function drawLine(canvasId, labels, values){
+  const canvas=document.getElementById(canvasId);
+  const ctx=clearCanvas(canvas);
+  const W=canvas.width, H=canvas.height;
+  const pad={top:10,right:16,bottom:30,left:70};
+  const chartW=W-pad.left-pad.right;
+  const chartH=H-pad.top-pad.bottom;
+  const maxV=Math.max(...values)*1.1||1;
+  const minV=Math.min(...values)*0.9;
+  const range=maxV-minV||1;
+  const xStep=chartW/(labels.length-1||1);
+  const toX=(i)=>pad.left+i*xStep;
+  const toY=(v)=>pad.top+chartH-(v-minV)/range*chartH;
+  ctx.strokeStyle='#eee';ctx.lineWidth=0.5;
+  for(let i=0;i<=4;i++){
+    const y=pad.top+i*chartH/4;
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    const val=maxV-(maxV-minV)*i/4;
+    ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='right';
+    ctx.fillText('R$'+(val/1000).toFixed(0)+'k',pad.left-4,y+3);
+  }
+  ctx.beginPath();ctx.moveTo(toX(0),toY(values[0]));
+  values.forEach((_,i)=>{if(i>0)ctx.lineTo(toX(i),toY(values[i]))});
+  ctx.lineTo(toX(values.length-1),pad.top+chartH);
+  ctx.lineTo(pad.left,pad.top+chartH);
+  ctx.closePath();ctx.fillStyle='rgba(29,158,117,.1)';ctx.fill();
+  ctx.beginPath();ctx.moveTo(toX(0),toY(values[0]));
+  values.forEach((_,i)=>{if(i>0)ctx.lineTo(toX(i),toY(values[i]))});
+  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
+  values.forEach((v,i)=>{
+    ctx.beginPath();ctx.arc(toX(i),toY(v),3,0,2*Math.PI);
+    ctx.fillStyle='#1D9E75';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  });
+  ctx.fillStyle='#888';ctx.font='9px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
+  labels.forEach((lbl,i)=>ctx.fillText(lbl,toX(i),H-pad.bottom+14));
+}
+
+// ── RENDER ─────────────────────────────────────────────
+function render(){
+  if(!cats.length) return;
+  const pi=parseInt(document.getElementById('sel-parcela').value);
+  const ci=parseInt(document.getElementById('sel-cat').value);
+  const filtCats=ci===-1?cats:[cats[ci]];
+  const parLabel=pi===-1?'Todas as parcelas':parcelas[pi];
+  const catLabel=ci===-1?'Todas as categorias':cats[ci].nome;
+  document.getElementById('sub-title').textContent=`Resumo geral · ${parLabel} · ${catLabel}`;
+
+  const totalOrc=filtCats.reduce((s,c)=>{const{orc}=sumCat(c,pi);return s+orc},0);
+  const totalGas=filtCats.reduce((s,c)=>{const{gas}=sumCat(c,pi);return s+gas},0);
+  const totalSal=totalOrc-totalGas;
+  const ex=pct(totalGas,totalOrc);
+  document.getElementById('cards-wrap').innerHTML=`
+    <div class="card"><div class="lbl">Orçamento</div><div class="val">${fmt(totalOrc)}</div><div class="sub">${pi===-1?parcelas.length+' parcelas':'Parcela '+(pi+1)}</div></div>
+    <div class="card ${ex>80?'amber':''}"><div class="lbl">Total gasto</div><div class="val">${fmt(totalGas)}</div><div class="sub">${ex}% executado</div></div>
+    <div class="card green"><div class="lbl">Saldo disponível</div><div class="val">${fmt(totalSal)}</div><div class="sub">Restante</div></div>
+    <div class="card ${ex===0?'':ex>90?'red':'amber'}"><div class="lbl">Execução</div><div class="val">${ex}%</div><div class="sub">${ex===0?'Não iniciado':ex>90?'Crítico':'Em andamento'}</div></div>`;
+
+  let alerts=[];
+  filtCats.forEach(c=>{
+    const{orc,gas}=sumCat(c,pi);
+    const p=pct(gas,orc);
+    if(p>=90) alerts.push({type:'warn',title:`⚠ ${c.nome} — Orçamento crítico`,msg:`${p}% do orçamento utilizado. Saldo restante: ${fmt(orc-gas)}.`});
+    else if(gas===0&&orc>0) alerts.push({type:'info',title:`${c.nome} — Sem gastos registrados`,msg:`Orçado: ${fmt(orc)}. Nenhum gasto lançado ainda.`});
+  });
+  if(ex>0&&ex<10) alerts.unshift({type:'ok',title:'Execução financeira baixa',msg:`Apenas ${ex}% do orçamento total foi executado. Verifique se os lançamentos estão em dia.`});
+  if(alerts.length===0) alerts.push({type:'ok',title:'Orçamento sob controle',msg:'Nenhum alerta identificado para a seleção atual.'});
+  const aw=document.getElementById('alerts-wrap');
+  aw.innerHTML='';
+  alerts.slice(0,4).forEach(a=>{
+    const icon=a.type==='warn'?'!':a.type==='ok'?'✓':'i';
+    aw.innerHTML+=`<div class="alert ${a.type}"><div class="alert-icon">${icon}</div><div><strong>${a.title}</strong>${a.msg}</div></div>`;
+  });
+
+  const tb=document.getElementById('tbody');tb.innerHTML='';
+  filtCats.forEach(c=>{
+    const orc=c.orcado.reduce((a,b)=>a+b,0);
+    const gas=c.gasto.reduce((a,b)=>a+b,0);
+    const sal=orc-gas;const p=pct(gas,orc);
+    const st=gas===0?'zero':p>=90?'danger':p>60?'warn':'ok';
+    const stL=gas===0?'Sem gastos':p>=90?'Crítico':p>60?'Atenção':'Normal';
+    const pbC=p>=90?'danger':p>60?'warn':'';
+    tb.innerHTML+=`<tr><td><strong>${c.nome}</strong></td><td>${fmt(orc)}</td><td>${fmt(gas)}</td>
+      <td style="color:#1D9E75;font-weight:500">${fmt(sal)}</td>
+      <td><div style="display:flex;align-items:center;gap:6px">
+        <div class="pb-outer"><div class="pb-inner ${pbC}" style="width:${Math.min(p,100)}%"></div></div>
+        <span style="font-size:11px;color:#888">${p}%</span></div></td>
+      <td><span class="pill ${st}">${stL}</span></td></tr>`;
+  });
+
+  const labels=filtCats.map(c=>c.nome);
+  const orcados=filtCats.map(c=>sumCat(c,pi).orc);
+  const gastos=filtCats.map(c=>sumCat(c,pi).gas);
+  const saldos=filtCats.map(c=>{const{orc,gas}=sumCat(c,pi);return orc-gas});
+  const maxVal=Math.max(...orcados,...gastos,...saldos)*1.1||1;
+  drawBar('barCanvas',labels,[{color:'#B5D4F4',data:orcados},{color:'#D85A30',data:gastos},{color:'#1D9E75',data:saldos}],maxVal);
+  document.getElementById('bar-title').textContent='Orçado vs Gasto vs Saldo'+(pi!==-1?' — '+parcelas[pi]:'');
+
+  const totais=cats.map(c=>c.orcado.reduce((a,b)=>a+b,0));
+  const pl=document.getElementById('pie-legend');
+  pl.innerHTML='';
+  const totalPie=totais.reduce((a,b)=>a+b,0);
+  cats.forEach((c,i)=>{
+    pl.innerHTML+=`<span><i style="background:${cores[i]}"></i>${c.nome.split(' ')[0]} ${Math.round(totais[i]/totalPie*100)}%</span>`;
+  });
+  drawPie('pieCanvas',cats.map(c=>c.nome),totais,cores);
+
+  const lineSaldos=Array.from({length:parcelas.length},(_,pIdx)=>
+    filtCats.reduce((s,c)=>s+(c.orcado[pIdx]||0)-(c.gasto[pIdx]||0),0));
+  drawLine('lineCanvas',parcelas.map((_,i)=>`P${i+1}`),lineSaldos);
+}
+
+let resizeTimer;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,150)});
+
+// Carregar ao iniciar
+loadData();
+</script>
+</body>
+</html>
