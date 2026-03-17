@@ -202,9 +202,13 @@ function parseCSV(text) {
 
 function parseVal(str) {
   if (!str) return 0;
-  // Remove R$, espaços, pontos de milhar, troca vírgula por ponto
-  const cleaned = str.replace(/R\$\s*/g, '').replace(/\./g, '').replace(',', '.').trim();
-  const v = parseFloat(cleaned);
+  // Remove aspas, R$, espaços
+  let s = str.replace(/"/g, '').replace(/R\$\s*/g, '').trim();
+  // Formato brasileiro: 1.289,92 → remove pontos de milhar, troca vírgula por ponto
+  if (s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  }
+  const v = parseFloat(s);
   return isNaN(v) ? 0 : v;
 }
 
@@ -217,23 +221,35 @@ async function loadData() {
   document.getElementById('sync-info').className = 'sync-info';
 
   try {
-    // Tenta direto primeiro (funciona em HTTPS), depois proxies como fallback
+    // Fetch direto — funciona quando hospedado em HTTPS (GitHub Pages)
+    // O Google Sheets publica CSV com CORS aberto para domínios externos
     const attempts = [
-      u => u,
+      u => u + '&cachebust=' + Date.now(),
       u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
       u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
       u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+      u => `https://cors.sh/${u}`,
     ];
     let resp = null, text = null, lastErr = 'Todos os proxies falharam';
     for (const makeUrl of attempts) {
       try {
-        const r = await fetch(makeUrl(CSV_URL));
-        if (r.ok) { resp = r; break; }
-        lastErr = 'Erro HTTP ' + r.status;
+        const r = await fetch(makeUrl(CSV_URL), {
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (r.ok) {
+          const buf = await r.arrayBuffer();
+          // Decodifica como UTF-8; se tiver caracteres ruins, tenta latin1
+          let t = new TextDecoder('utf-8').decode(buf);
+          if (t.includes('Ã')) t = new TextDecoder('latin1').decode(buf);
+          // Verifica se retornou CSV válido (não HTML de erro)
+          if (t && !t.trim().startsWith('<') && t.includes(',')) {
+            text = t; resp = r; break;
+          }
+        }
+        lastErr = 'Resposta inválida ou erro HTTP ' + r.status;
       } catch(e) { lastErr = e.message; }
     }
-    if (!resp) throw new Error(lastErr);
-    text = await resp.text();
+    if (!text) throw new Error(lastErr);
     processCSV(text);
 
     document.getElementById('loading-state').style.display = 'none';
