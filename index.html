@@ -4,27 +4,31 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Controle de Despesas</title>
+
+<style>
+body { font-family: Arial; background:#f5f5f5; padding:20px; }
+.card { background:#fff; padding:20px; border-radius:10px; margin-bottom:10px; }
+</style>
 </head>
+
 <body>
 
-<h2>Carregando dados...</h2>
+<h2>Controle de Despesas</h2>
+<div id="status">Carregando...</div>
+<div id="dados"></div>
 
 <script>
-// ✅ CONFIG CORRIGIDA
-const APPS_URL = null;
-
+// ✅ CONFIG FINAL CORRIGIDA
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/1RT24LIxWB2eboOWrbagZ1hFvE-N0rDJG535EBiynAcE/export?format=csv&gid=1436090432';
 
-// ✅ VALIDAÇÃO FORTE (ANTI ERRO GOOGLE)
+// ✅ VALIDAÇÃO ANTI ERRO GOOGLE
 function isValidCSV(t) {
   if (!t || t.length < 50) return false;
 
   const s = t.toLowerCase();
 
   if (s.includes('<html')) return false;
-  if (s.includes('<!doctype')) return false;
   if (s.includes('google') && s.includes('drive')) return false;
-  if (s.includes('accounts.google')) return false;
 
   if (!s.includes(',')) return false;
   if (s.split('\n').length < 3) return false;
@@ -32,26 +36,45 @@ function isValidCSV(t) {
   return true;
 }
 
-// ✅ FUNÇÃO PRINCIPAL SIMPLIFICADA
+// ✅ PARSER CSV
+function parseCSV(text) {
+  return text.trim().split('\n').map(l => l.split(','));
+}
+
+// ✅ LOAD PRINCIPAL
 async function loadData() {
   try {
-    const response = await fetch(CSV_URL + '&t=' + Date.now());
+    const res = await fetch(CSV_URL + '&t=' + Date.now());
 
-    if (!response.ok) throw new Error('Erro ao buscar dados');
+    if (!res.ok) throw new Error('Erro ao buscar');
 
-    const text = await response.text();
+    const text = await res.text();
 
     if (!isValidCSV(text)) {
-      throw new Error('Resposta inválida (não é CSV)');
+      throw new Error('Resposta inválida');
     }
 
-    console.log('✅ Dados carregados com sucesso');
-    document.body.innerHTML = '<h2>Dados carregados com sucesso ✅</h2>';
+    const rows = parseCSV(text);
+
+    document.getElementById('status').innerHTML = '✅ Dados carregados';
+
+    render(rows);
 
   } catch (e) {
-    console.error(e);
-    document.body.innerHTML = '<h2>Erro ao carregar dados ❌</h2><p>' + e.message + '</p>';
+    document.getElementById('status').innerHTML =
+      '❌ Erro: ' + e.message;
   }
+}
+
+// ✅ RENDER SIMPLES (FUNCIONANDO)
+function render(rows) {
+  let html = '';
+
+  rows.slice(0, 15).forEach((r, i) => {
+    html += `<div class="card">${r.join(' | ')}</div>`;
+  });
+
+  document.getElementById('dados').innerHTML = html;
 }
 
 // INIT
