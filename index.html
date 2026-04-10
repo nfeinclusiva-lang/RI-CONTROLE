@@ -441,12 +441,16 @@ async function loadData() {
 
 function processCSV(text) {
   const rows = parseCSV(text);
+  console.log('[CSV] Total linhas:', rows.length);
+  rows.slice(0,5).forEach((r,i) => console.log('[CSV] L'+i+':', JSON.stringify(r.slice(0,8))));
 
-  // Cabeçalho está na linha 2 da planilha = índice 1 do array
-  let headerIdx = 1;
+  // Procura linha com "Parcela 1" ou similar
+  let headerIdx = -1;
   rows.forEach((row, i) => {
     if (row.some(h => h && h.match(/parcela\s*\d+/i))) headerIdx = i;
   });
+  if (headerIdx === -1) headerIdx = 1; // fallback
+  console.log('[CSV] headerIdx:', headerIdx, '| header:', rows[headerIdx]);
 
   const header = rows[headerIdx] || [];
   parcelas = []; parcelaCols = [];
@@ -454,9 +458,14 @@ function processCSV(text) {
     if (h && h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
   });
 
-  // Índices da ESTRUTURA são 0-based (linha 1 da planilha = índice 0 do array rows)
-  // A planilha começa: linha1=título, linha2=cabeçalho, linha3=dados
-  // rows[0]=título, rows[1]=cabeçalho, rows[2]=primeira linha de dados
+  // Fallback: se não achou "Parcela X", pega colunas não-vazias após a 1a
+  if (parcelas.length === 0) {
+    header.forEach((h, i) => {
+      if (i > 0 && h && h.trim() !== '') { parcelas.push(h.trim()); parcelaCols.push(i); }
+    });
+  }
+  console.log('[CSV] Parcelas:', parcelas, '| Colunas:', parcelaCols);
+
   dados = ESTRUTURA.map(e => ({
     grupo: e.grupo,
     nome: e.nome,
@@ -465,6 +474,7 @@ function processCSV(text) {
       ? parcelaCols.map(() => 0)
       : parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
   }));
+  console.log('[CSV] dados[0]:', JSON.stringify(dados[0]));
 
   // Selects
   const selP = document.getElementById('sel-parcela');
@@ -508,7 +518,8 @@ function setSyncBadge(state, text) {
 
 // ── RENDER ────────────────────────────────────────────────
 function render() {
-  if (!dados.length) return;
+  console.log('[render] dados:', dados.length, '| parcelas:', parcelas.length);
+  if (!dados.length) { console.warn('[render] sem dados, abortando'); return; }
   const pi   = parseInt(document.getElementById('sel-parcela').value);
   const grpV = document.getElementById('sel-grupo').value;
   const ci   = parseInt(document.getElementById('sel-cat').value);
