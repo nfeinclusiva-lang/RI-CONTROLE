@@ -58,8 +58,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading p{font-size:13px;color:var(--text3)}
-.error-box{background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--radius);padding:24px;text-align:center;color:var(--red);margin-bottom:20px}
-.error-box strong{display:block;margin-bottom:6px;font-size:15px}
+.error-box{background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--radius);padding:24px;text-align:left;color:var(--red);margin-bottom:20px;line-height:1.8}
+.error-box strong{display:block;margin-bottom:10px;font-size:15px;text-align:center}
 
 /* ── CARDS ── */
 .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
@@ -185,7 +185,7 @@ tr:hover td{background:#FAFBFC}
 
   <div class="loading" id="loading-state">
     <div class="spinner"></div>
-    <p>Buscando dados da planilha...</p>
+    <p id="loading-msg">Buscando dados da planilha...</p>
   </div>
 
   <div id="error-state" style="display:none">
@@ -271,7 +271,7 @@ tr:hover td{background:#FAFBFC}
 <script>
 // ── CONFIG ───────────────────────────────────────────────
 // URL do Google Apps Script (sem CORS, sem proxy)
-const APPS_URL = 'https://script.google.com/macros/s/AKfycbwiwUE3AK4Kdg24DrqUyAScVl_lI-6CnEXm59MT5wZ9wL-tmSEc9z0NaLvWVYsIBA5UVQ/exec';
+const APPS_URL = 'https://script.google.com/macros/s/AKfycbw7bsRGnVhmLl0Xrg96SVbnTIEt0KBG_N-bV5WgvaM_MrqyDyB1Jj3oWog_25_bSqZR/exec';
 // CSV direto como fallback
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
 const CSV_ENC = encodeURIComponent(CSV_URL);
@@ -348,7 +348,14 @@ function parseVal(str) {
 
 // ── LOAD DATA ─────────────────────────────────────────────
 function isValidCSV(t) {
-  return t && t.length > 30 && !t.trim().startsWith('<') && t.includes(',');
+  if (!t || t.length < 100) return false;
+  const s = t.trim();
+  if (s.startsWith('<')) return false;
+  if (s.startsWith('{')) return false;
+  if (s.startsWith('[')) return false;
+  if (!s.includes(',')) return false;
+  if (s.split('\n').length < 3) return false;
+  return true;
 }
 
 function fetchCSV(url, timeoutMs) {
@@ -370,28 +377,48 @@ async function loadData() {
   setSyncBadge('loading', 'Sincronizando...');
 
   let text = null;
+  let fonteUsada = '';
 
+  // APPS_URL adicionado como primeira fonte (sem CORS, mais confiável)
   const fontes = [
-    CSV_URL + '&t=' + Date.now(),
-    `https://corsproxy.io/?${CSV_ENC}`,
-    `https://api.allorigins.win/raw?url=${CSV_ENC}&t=${Date.now()}`,
-    `https://api.codetabs.com/v1/proxy?quest=${CSV_ENC}`,
+    { url: APPS_URL,                                                    label: 'Apps Script'  },
+    { url: CSV_URL + '&t=' + Date.now(),                                label: 'CSV direto'   },
+    { url: `https://corsproxy.io/?${CSV_ENC}`,                          label: 'corsproxy.io' },
+    { url: `https://api.allorigins.win/raw?url=${CSV_ENC}&t=${Date.now()}`, label: 'allorigins' },
+    { url: `https://api.codetabs.com/v1/proxy?quest=${CSV_ENC}`,        label: 'codetabs'    },
   ];
 
-  for (const url of fontes) {
+  const mensagens = [
+    'Conectando ao Google Apps Script...',
+    'Tentando CSV direto do Google Sheets...',
+    'Tentando proxy corsproxy.io...',
+    'Tentando proxy allorigins...',
+    'Última tentativa (codetabs)...',
+  ];
+
+  for (let idx = 0; idx < fontes.length; idx++) {
+    const fonte = fontes[idx];
+    const msgEl = document.getElementById('loading-msg');
+    if (msgEl) msgEl.textContent = mensagens[idx] || 'Buscando dados...';
     try {
-      const t = await fetchCSV(url, 12000);
-      if (isValidCSV(t)) { text = t; break; }
+      const t = await fetchCSV(fonte.url, 14000);
+      if (isValidCSV(t)) { text = t; fonteUsada = fonte.label; break; }
     } catch(e) { /* tenta próximo */ }
   }
 
   if (!text) {
     hide('loading-state'); show('error-state');
-    document.getElementById('error-msg').textContent =
-      'Não foi possível carregar os dados. Verifique se a planilha está publicada na web (Arquivo → Publicar na web) e tente novamente.';
+    document.getElementById('error-msg').innerHTML =
+      'Não foi possível carregar os dados após tentar todas as fontes disponíveis.<br><br>' +
+      '<strong>Verifique:</strong><br>' +
+      '1. A planilha está publicada na web? (Arquivo → Publicar na web → CSV → Publicar)<br>' +
+      '2. O link do Google Apps Script está ativo e implantado como "Qualquer pessoa"?<br>' +
+      '3. Você está com conexão à internet?';
     setSyncBadge('err', 'Falha na sincronização');
     return;
   }
+
+  console.log('[Dashboard] Dados carregados via:', fonteUsada);
 
   try {
     processCSV(text);
