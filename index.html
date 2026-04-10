@@ -312,7 +312,7 @@ const ESTRUTURA = [
   { grupo:'Alimentação',      nome:'Alimentação ativ. extra',  planoIdx:10, gastoIdx:11 },
   { grupo:'Higiene',          nome:'Higiene/limpeza e EPI',    planoIdx:14, gastoIdx:15 },
   { grupo:'Custos Indiretos', nome:'Custos Indiretos',         planoIdx:18, gastoIdx:19 },
-  { grupo:'Recursos Humanos', nome:'Recursos Humanos',         planoIdx:21, gastoIdx:22 },
+  { grupo:'Recursos Humanos', nome:'Recursos Humanos',         planoIdx:21, gastoIdx:-1 }, // RH não tem linha de gasto no CSV
   { grupo:'Encargos Sociais', nome:'FGTS',                     planoIdx:25, gastoIdx:26 },
   { grupo:'Encargos Sociais', nome:'INSS',                     planoIdx:28, gastoIdx:29 },
   { grupo:'Encargos Sociais', nome:'IRPF',                     planoIdx:31, gastoIdx:32 },
@@ -456,7 +456,9 @@ function processCSV(text) {
     grupo: e.grupo,
     nome: e.nome,
     orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx] || [])[ci])),
-    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
+    gasto:  e.gastoIdx === -1
+      ? parcelaCols.map(() => 0)
+      : parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
   }));
 
   // Selects
