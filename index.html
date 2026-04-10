@@ -8,16 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  font-family: Arial;
-  background:#f5f6fa;
-  margin:0;
-  padding:20px;
-}
-
-h1 {
-  margin-bottom:20px;
-}
+body { font-family: Arial; background:#f5f6fa; margin:0; padding:20px; }
+h1 { margin-bottom:20px; }
 
 .grid {
   display:grid;
@@ -32,27 +24,14 @@ h1 {
   box-shadow:0 2px 8px rgba(0,0,0,0.1);
 }
 
-.valor {
-  font-size:20px;
-  font-weight:bold;
-}
-
+.valor { font-size:20px; font-weight:bold; }
 .verde { color:green; }
 .vermelho { color:red; }
 
-.top {
-  display:flex;
-  gap:20px;
-  margin-bottom:20px;
-}
+.top { display:flex; gap:20px; margin-bottom:20px; }
+.resumo { flex:1; }
 
-.resumo {
-  flex:1;
-}
-
-canvas {
-  margin-top:20px;
-}
+canvas { margin-top:20px; }
 </style>
 </head>
 
@@ -89,9 +68,40 @@ const CSV_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('http
 let dados = [];
 let parcelaCols = [];
 
-// ================= FUNÇÕES =================
-function normalizar(txt){
-  return (txt||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+// ================= CSV CORRETO =================
+function parseCSV(text) {
+  const rows = [];
+  let current = '';
+  let inQuotes = false;
+  let row = [];
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      row.push(current);
+      current = '';
+    } else if (char === '\n' && !inQuotes) {
+      row.push(current);
+      rows.push(row);
+      row = [];
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+
+  if (current) row.push(current);
+  if (row.length) rows.push(row);
+
+  return rows;
+}
+
+// ================= UTIL =================
+function normalizar(t){
+  return (t||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 }
 
 function identificarTipoLinha(t){
@@ -112,10 +122,6 @@ function extrairCategoria(t){
     .trim();
 }
 
-function parseCSV(text){
-  return text.split('\n').map(l=>l.split(','));
-}
-
 function parseVal(v){
   if(!v) return 0;
   return parseFloat(v.replace(/R\$/g,'').replace(/\./g,'').replace(',','.'))||0;
@@ -124,7 +130,14 @@ function parseVal(v){
 // ================= PROCESS =================
 function processCSV(text){
   const rows = parseCSV(text);
-  const header = rows[1];
+
+  // encontrar header corretamente
+  const header = rows.find(r => r[0] && r[0].toLowerCase().includes('item'));
+
+  if(!header){
+    console.error("Header não encontrado");
+    return;
+  }
 
   parcelaCols = [];
   header.forEach((h,i)=>{
@@ -154,6 +167,7 @@ function processCSV(text){
 
     parcelaCols.forEach((ci,idx)=>{
       const val = parseVal(r[ci]);
+
       if(tipo==='orcado') mapa[cat].orcado[idx]=val;
       if(tipo==='gasto') mapa[cat].gasto[idx]=val;
     });
@@ -184,16 +198,19 @@ function render(){
     labels.push(d.nome);
     valores.push(gas);
 
-    app.innerHTML += `
-      <div class="card">
-        <strong>${d.nome}</strong><br>
-        Orçado: R$ ${orc.toFixed(2)}<br>
-        Gasto: R$ ${gas.toFixed(2)}<br>
-        <span class="${saldo >=0 ? 'verde':'vermelho'}">
-          Saldo: R$ ${saldo.toFixed(2)}
-        </span>
-      </div>
+    const div = document.createElement('div');
+    div.className = 'card';
+
+    div.innerHTML = `
+      <strong>${d.nome}</strong><br>
+      Orçado: R$ ${orc.toFixed(2)}<br>
+      Gasto: R$ ${gas.toFixed(2)}<br>
+      <span class="${saldo>=0?'verde':'vermelho'}">
+        Saldo: R$ ${saldo.toFixed(2)}
+      </span>
     `;
+
+    app.appendChild(div);
   });
 
   document.getElementById('totalOrcado').innerText = 'R$ ' + totalOrc.toFixed(2);
@@ -218,10 +235,17 @@ function render(){
 
 // ================= LOAD =================
 async function loadData(){
-  const res = await fetch(CSV_URL);
-  const text = await res.text();
-  processCSV(text);
-  render();
+  try{
+    const res = await fetch(CSV_URL);
+    const text = await res.text();
+
+    processCSV(text);
+    render();
+
+  }catch(e){
+    document.body.innerHTML = "<h2>Erro ao carregar dados</h2>";
+    console.error(e);
+  }
 }
 
 loadData();
