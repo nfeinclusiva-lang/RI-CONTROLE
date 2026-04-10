@@ -9,19 +9,17 @@
 
 <style>
 body {
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background:#f4f6f9;
   margin:0;
   padding:20px;
 }
 
-h1 {
-  margin-bottom:20px;
-}
+h1 { margin-bottom:20px; }
 
 .cards {
   display:grid;
-  grid-template-columns: repeat(4,1fr);
+  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
   gap:10px;
   margin-bottom:20px;
 }
@@ -60,12 +58,9 @@ table {
 th, td {
   padding:10px;
   border-bottom:1px solid #eee;
-  text-align:left;
 }
 
-th {
-  background:#fafafa;
-}
+th { background:#fafafa; }
 </style>
 </head>
 
@@ -94,6 +89,9 @@ th {
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/1RT24LIxWB2eboOWrbagZ1hFvE-N0rDJG535EBiynAcE/export?format=csv&gid=1436090432';
 
+// força atualização automática a cada 60s
+setInterval(loadData, 60000);
+
 function isValidCSV(t){
   if(!t || t.length < 50) return false;
   const s = t.toLowerCase();
@@ -103,7 +101,7 @@ function isValidCSV(t){
 }
 
 function parseCSV(text){
-  return text.trim().split('\n').map(l=>l.split(','));
+  return text.trim().split('\n').map(l => l.split(','));
 }
 
 async function loadData(){
@@ -111,22 +109,22 @@ async function loadData(){
     const res = await fetch(CSV_URL + '&t=' + Date.now());
     const text = await res.text();
 
-    if(!isValidCSV(text)) throw new Error('Erro CSV');
+    if(!isValidCSV(text)) throw new Error();
 
     const rows = parseCSV(text);
 
-    document.getElementById('status').innerHTML = '✅ Atualizado';
+    document.getElementById('status').innerHTML = '✅ Atualizado em ' + new Date().toLocaleTimeString();
 
     montarDashboard(rows);
 
   }catch(e){
-    document.getElementById('status').innerHTML = '❌ Erro ao carregar';
+    document.getElementById('status').innerHTML = '❌ Erro ao carregar dados';
   }
 }
 
 function montarDashboard(rows){
 
-  let dados = rows.slice(2,12); // ajuste simples
+  let dados = rows.slice(2,12);
 
   let totalOrc = 0;
   let totalGas = 0;
@@ -138,8 +136,8 @@ function montarDashboard(rows){
 
   dados.forEach(r=>{
     let nome = r[0];
-    let orc = Number(r[2]) || 0;
-    let gas = Number(r[3]) || 0;
+    let orc = parseFloat(r[2]) || 0;
+    let gas = parseFloat(r[3]) || 0;
     let sal = orc - gas;
 
     totalOrc += orc;
@@ -164,10 +162,12 @@ function montarDashboard(rows){
     <div class="card"><h3>Orçado</h3><p>R$ ${totalOrc.toFixed(2)}</p></div>
     <div class="card"><h3>Gasto</h3><p>R$ ${totalGas.toFixed(2)}</p></div>
     <div class="card"><h3>Saldo</h3><p>R$ ${(totalOrc-totalGas).toFixed(2)}</p></div>
-    <div class="card"><h3>Execução</h3><p>${((totalGas/totalOrc)*100).toFixed(1)}%</p></div>
+    <div class="card"><h3>Execução</h3><p>${((totalGas/totalOrc)*100 || 0).toFixed(1)}%</p></div>
   `;
 
-  new Chart(document.getElementById('grafico'),{
+  if(window.grafico) window.grafico.destroy();
+
+  window.grafico = new Chart(document.getElementById('grafico'),{
     type:'bar',
     data:{
       labels:labels,
