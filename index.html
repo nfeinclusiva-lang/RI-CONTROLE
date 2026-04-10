@@ -4,558 +4,679 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Controle de Despesas — Termo de Fomento</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f5f7;color:#1a1a1a;font-size:14px}
-  .page{max-width:1100px;margin:0 auto;padding:24px 20px}
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F5;
+  --surface:#FFFFFF;
+  --surface2:#F7F8FA;
+  --border:#E4E7EC;
+  --text:#0D1117;
+  --text2:#5A6478;
+  --text3:#9CA3AF;
+  --green:#0B8F64;
+  --green-bg:#E6F5F0;
+  --amber:#A05C00;
+  --amber-bg:#FEF3E2;
+  --red:#C0392B;
+  --red-bg:#FEE2E2;
+  --blue:#1D6FA8;
+  --blue-bg:#EBF4FB;
+  --purple:#5B4FCF;
+  --purple-bg:#EFEDFC;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
 
-  .topbar{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px}
-  .topbar h1{font-size:18px;font-weight:600;color:#1a1a1a}
-  .topbar p{font-size:12px;color:#666;margin-top:3px}
-  .topbar-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .btn{font-size:12px;padding:7px 16px;border-radius:8px;border:1px solid #ccc;background:#fff;color:#333;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit}
-  .btn:hover{background:#f0f0f0}
-  .btn.primary{background:#1D9E75;color:#fff;border-color:#1D9E75}
-  .btn.primary:hover{background:#178a64}
-  .btn svg{flex-shrink:0}
-  .sync-info{font-size:11px;color:#aaa;margin-top:4px}
-  .sync-info.ok{color:#1D9E75}
-  .sync-info.err{color:#E24B4A}
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo svg{display:block}
+.topbar h1{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-badge{font-size:11px;padding:4px 10px;border-radius:99px;background:var(--surface2);color:var(--text3);border:1px solid var(--border);display:flex;align-items:center;gap:5px}
+.sync-badge.ok{background:var(--green-bg);color:var(--green);border-color:#A3D9C4}
+.sync-badge.err{background:var(--red-bg);color:var(--red);border-color:#FECACA}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn{font-size:12px;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;font-weight:500;transition:all .15s}
+.btn:hover{background:var(--surface2);color:var(--text)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.primary:hover{background:#097a55}
 
-  /* Loading */
-  .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px}
-  .spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:#1D9E75;border-radius:50%;animation:spin .8s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .loading p{font-size:13px;color:#888}
-  .error-box{background:#FEE2E2;border:1px solid #FECACA;border-radius:10px;padding:20px;text-align:center;color:#991B1B;font-size:13px;margin-bottom:18px}
-  .error-box strong{display:block;margin-bottom:6px;font-size:14px}
+/* ── PAGE ── */
+.page{max-width:1200px;margin:0 auto;padding:24px 24px 40px}
 
-  /* Cards */
-  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
-  @media(max-width:700px){.cards{grid-template-columns:repeat(2,1fr)}}
-  .card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #e5e7eb}
-  .card .lbl{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-  .card .val{font-size:20px;font-weight:600;color:#1a1a1a}
-  .card .sub{font-size:11px;color:#aaa;margin-top:3px}
-  .card.green .val{color:#1D9E75}
-  .card.amber .val{color:#BA7517}
-  .card.red .val{color:#E24B4A}
+/* ── LOADING ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:16px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-size:13px;color:var(--text3)}
+.error-box{background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--radius);padding:24px;text-align:center;color:var(--red);margin-bottom:20px}
+.error-box strong{display:block;margin-bottom:6px;font-size:15px}
 
-  /* Alertas */
-  .alerts{margin-bottom:18px}
-  .alert{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:8px;font-size:12.5px;line-height:1.5}
-  .alert-icon{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
-  .alert.warn{background:#FEF3E2;color:#7A4A00;border:1px solid #F9D89B}
-  .alert.warn .alert-icon{background:#BA7517;color:#fff}
-  .alert.ok{background:#EDFAF4;color:#1A5C3A;border:1px solid #A0DCC0}
-  .alert.ok .alert-icon{background:#1D9E75;color:#fff}
-  .alert.info{background:#F3F4F6;color:#555;border:1px solid #DDD}
-  .alert.info .alert-icon{background:#aaa;color:#fff}
-  .alert strong{display:block;font-weight:600;margin-bottom:1px}
+/* ── CARDS ── */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.card-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card-val{font-size:22px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;letter-spacing:-.02em}
+.card-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.card.green .card-val{color:var(--green)}
+.card.amber .card-val{color:var(--amber)}
+.card.red .card-val{color:var(--red)}
+.card.blue .card-val{color:var(--blue)}
 
-  /* Filtros */
-  .filters{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:18px;background:#fff;padding:12px 16px;border-radius:10px;border:1px solid #e5e7eb}
-  .filters label{font-size:12px;color:#666;font-weight:500}
-  select{font-size:12px;padding:6px 10px;border-radius:7px;border:1px solid #ccc;background:#fff;color:#333;cursor:pointer;font-family:inherit}
+/* ── ALERTS ── */
+.alerts{margin-bottom:20px;display:flex;flex-direction:column;gap:8px}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);font-size:12.5px;line-height:1.5}
+.alert-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.alert.warn{background:var(--amber-bg);color:#5C3600;border:1px solid #F4C97A}
+.alert.warn .alert-icon{background:var(--amber);color:#fff}
+.alert.ok{background:var(--green-bg);color:#084D35;border:1px solid #8DCDB6}
+.alert.ok .alert-icon{background:var(--green);color:#fff}
+.alert.info{background:var(--blue-bg);color:#0D3B5C;border:1px solid #90C5E8}
+.alert.info .alert-icon{background:var(--blue);color:#fff}
+.alert strong{font-weight:600;margin-right:4px}
 
-  /* Charts */
-  .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
-  @media(max-width:600px){.charts-row{grid-template-columns:1fr}}
-  .chart-card{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px}
-  .chart-card.full{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:14px}
-  .ct{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
-  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;font-size:11px;color:#666}
-  .legend span{display:flex;align-items:center;gap:4px}
-  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
-  canvas{display:block}
+/* ── FILTERS ── */
+.filters-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:20px;box-shadow:var(--shadow)}
+.filters-bar label{font-size:12px;color:var(--text2);font-weight:500}
+select{font-size:12.5px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit;outline:none}
+select:focus{border-color:var(--green)}
+.filters-divider{width:1px;height:24px;background:var(--border)}
 
-  /* Tabela */
-  .table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin-bottom:18px;overflow-x:auto}
-  table{width:100%;border-collapse:collapse;font-size:12.5px}
-  th{font-weight:600;color:#666;text-align:left;padding:6px 10px;border-bottom:1px solid #eee;font-size:11px;text-transform:uppercase;letter-spacing:.03em}
-  td{padding:9px 10px;color:#1a1a1a;border-bottom:1px solid #f0f0f0}
-  tr:last-child td{border-bottom:none}
-  tr:hover td{background:#fafafa}
-  .pill{display:inline-block;font-size:10.5px;padding:3px 9px;border-radius:999px;font-weight:500}
-  .pill.ok{background:#EDFAF4;color:#1A5C3A}
-  .pill.warn{background:#FEF3E2;color:#7A4A00}
-  .pill.zero{background:#F3F4F6;color:#777}
-  .pill.danger{background:#FEE2E2;color:#991B1B}
-  .pb-outer{height:6px;background:#F0F0F0;border-radius:3px;width:90px;display:inline-block;vertical-align:middle}
-  .pb-inner{height:6px;border-radius:3px;background:#1D9E75;display:block}
-  .pb-inner.warn{background:#BA7517}
-  .pb-inner.danger{background:#E24B4A}
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:680px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.chart-card.full{margin-bottom:14px}
+.chart-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:11px;color:var(--text2)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0}
+canvas{display:block;width:100%!important}
 
-  .footer{text-align:center;font-size:11px;color:#bbb;margin-top:10px;padding-top:10px;border-top:1px solid #eee}
+/* ── TABLE ── */
+.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:13px;font-weight:600;color:var(--text)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-weight:600;color:var(--text3);text-align:left;padding:9px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface2);border-bottom:1px solid var(--border)}
+td{padding:10px 16px;color:var(--text);border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFC}
 
-  #main-content{display:none}
+/* Section rows */
+.section-row td{background:#F0F2F5;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);padding:6px 16px;border-bottom:1px solid var(--border)}
+.sub-row td:first-child{padding-left:30px;color:var(--text2)}
 
-  @media print{
-    body{background:#fff}
-    .btn,.filters,.topbar-btns{display:none!important}
-    .page{padding:0}
-    .card,.chart-card,.chart-card.full,.table-wrap{border:1px solid #ddd!important;break-inside:avoid}
-    .charts-row{grid-template-columns:1fr 1fr!important}
-  }
+/* Pills */
+.pill{display:inline-block;font-size:10.5px;padding:3px 9px;border-radius:99px;font-weight:600}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.warn{background:var(--amber-bg);color:var(--amber)}
+.pill.zero{background:var(--surface2);color:var(--text3)}
+.pill.danger{background:var(--red-bg);color:var(--red)}
+
+/* Progress bar */
+.pb-wrap{display:flex;align-items:center;gap:8px}
+.pb-outer{height:5px;background:var(--border);border-radius:3px;width:100px;flex-shrink:0}
+.pb-inner{height:5px;border-radius:3px;background:var(--green);display:block;transition:width .3s}
+.pb-inner.warn{background:#E8A430}
+.pb-inner.danger{background:var(--red)}
+.pct-lbl{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;min-width:32px}
+
+/* Mono values */
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+
+/* ── FOOTER ── */
+.footer{text-align:center;font-size:11px;color:var(--text3);margin-top:8px}
+
+#main-content{display:none}
+
+@media print{
+  .topbar,.btn,.filters-bar{display:none!important}
+  .page{padding:0}
+  body{background:#fff}
+  .charts-grid{grid-template-columns:1fr 1fr!important}
+}
 </style>
 </head>
 <body>
-<div class="page" id="page">
 
-  <div class="topbar">
-    <div>
-      <h1>Controle de Despesas — Termo de Fomento</h1>
-      <p id="sub-title">Carregando dados...</p>
-      <div class="sync-info" id="sync-info">Aguardando sincronização...</div>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="9" width="3" height="7" rx="1" fill="#fff" opacity=".7"/>
+        <rect x="7.5" y="5" width="3" height="11" rx="1" fill="#fff" opacity=".9"/>
+        <rect x="13" y="2" width="3" height="14" rx="1" fill="#fff"/>
+      </svg>
     </div>
-    <div class="topbar-btns">
-      <button class="btn primary" onclick="loadData()">
-        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Atualizar
-      </button>
-      <button class="btn" onclick="window.print()">
-        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9H3V2z" stroke="#555" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M10 2v3h3" stroke="#555" stroke-width="1.3" fill="none"/><path d="M5 9h6M5 11.5h4" stroke="#555" stroke-width="1.1" stroke-linecap="round"/></svg>
-        Exportar PDF
-      </button>
+    <div>
+      <div class="topbar h1" style="font-size:15px;font-weight:600">Controle de Despesas</div>
+      <div class="topbar-sub" id="sub-title">Termo de Fomento · Carregando...</div>
     </div>
   </div>
+  <div class="topbar-right">
+    <div class="sync-badge" id="sync-badge">
+      <div class="sync-dot"></div>
+      <span id="sync-text">Aguardando...</span>
+    </div>
+    <button class="btn primary" onclick="loadData()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Atualizar
+    </button>
+    <button class="btn" onclick="window.print()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9H3V2z" stroke="#5A6478" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M10 2v3h3" stroke="#5A6478" stroke-width="1.3" fill="none"/><path d="M5 9h6M5 11.5h4" stroke="#5A6478" stroke-width="1.1" stroke-linecap="round"/></svg>
+      PDF
+    </button>
+  </div>
+</div>
 
-  <!-- Loading state -->
+<div class="page">
+
   <div class="loading" id="loading-state">
     <div class="spinner"></div>
     <p>Buscando dados da planilha...</p>
   </div>
 
-  <!-- Error state -->
   <div id="error-state" style="display:none">
     <div class="error-box">
       <strong>Não foi possível carregar os dados</strong>
       <span id="error-msg">Verifique se a planilha está publicada e tente novamente.</span>
     </div>
+    <div style="text-align:center">
+      <button class="btn primary" onclick="loadData()">Tentar novamente</button>
+    </div>
   </div>
 
-  <!-- Main content -->
   <div id="main-content">
+
     <div class="cards" id="cards-wrap"></div>
     <div class="alerts" id="alerts-wrap"></div>
 
-    <div class="filters">
-      <label>Parcela:</label>
+    <div class="filters-bar">
+      <label>Parcela</label>
       <select id="sel-parcela" onchange="render()">
-        <option value="-1">Todas as parcelas (total)</option>
+        <option value="-1">Todas (total anual)</option>
       </select>
-      <label style="margin-left:8px">Categoria:</label>
+      <div class="filters-divider"></div>
+      <label>Grupo</label>
+      <select id="sel-grupo" onchange="render()">
+        <option value="-1">Todos os grupos</option>
+      </select>
+      <div class="filters-divider"></div>
+      <label>Categoria</label>
       <select id="sel-cat" onchange="render()">
         <option value="-1">Todas as categorias</option>
       </select>
     </div>
 
-    <div class="charts-row">
+    <div class="charts-grid">
       <div class="chart-card">
-        <div class="ct" id="bar-title">Orçado vs Gasto vs Saldo</div>
+        <div class="chart-title" id="bar-title">Orçado vs Gasto vs Saldo</div>
         <div class="legend">
-          <span><i style="background:#3B8BD4"></i> Orçado</span>
-          <span><i style="background:#D85A30"></i> Gasto</span>
-          <span><i style="background:#1D9E75"></i> Saldo</span>
+          <span><i style="background:#B5D4F4"></i>Orçado</span>
+          <span><i style="background:#E8724A"></i>Gasto</span>
+          <span><i style="background:#0B8F64"></i>Saldo</span>
         </div>
-        <canvas id="barCanvas" height="200"></canvas>
+        <canvas id="barCanvas" height="220"></canvas>
       </div>
       <div class="chart-card">
-        <div class="ct">Distribuição do orçamento total</div>
+        <div class="chart-title">Distribuição do orçamento total</div>
         <div id="pie-legend" class="legend"></div>
-        <canvas id="pieCanvas" height="200"></canvas>
+        <canvas id="pieCanvas" height="220"></canvas>
       </div>
     </div>
 
     <div class="chart-card full">
-      <div class="ct">Saldo disponível por parcela</div>
-      <canvas id="lineCanvas" height="140"></canvas>
+      <div class="chart-title">Saldo disponível por parcela (evolução)</div>
+      <canvas id="lineCanvas" height="130"></canvas>
     </div>
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <div class="ct" id="table-title">Detalhamento por categoria</div>
+    <div class="table-section">
+      <div class="table-header">
+        <h3 id="table-title">Detalhamento por categoria</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th id="th-orc">Orçado</th>
+              <th>Gasto</th>
+              <th>Saldo</th>
+              <th style="width:160px">Execução</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr id="thead-row">
-          <th>Categoria</th><th id="th-orc">Orçado (total)</th><th>Gasto</th><th>Saldo</th><th>% Exec.</th><th>Status</th>
-        </tr></thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
-  </div>
+
+  </div><!-- /main-content -->
 
   <div class="footer">Atualizado em <span id="hoje"></span> · Controle de Despesas — Termo de Fomento</div>
 </div>
 
 <script>
-// ── CONFIG ─────────────────────────────────────────────
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTdFi3VjsKJzLkXzjt9aWFLbtDQXdOZpvzgTcytq86Wil_qOzmLm-h_JkUJ-Dw4EP_rw6-ynEOVZec3/pub?gid=1079040709&single=true&output=csv';
+// ── CONFIG ───────────────────────────────────────────────
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
 
-const cores = ['#3B8BD4','#1D9E75','#BA7517','#D85A30','#7F77DD'];
-let cats = [];
+// Paleta de cores por grupo
+const CORES_GRUPO = {
+  'Alimentação':         '#3B8BD4',
+  'Material':            '#1D9E75',
+  'Higiene':             '#BA7517',
+  'Custos Indiretos':    '#D85A30',
+  'Recursos Humanos':    '#7F77DD',
+  'Encargos Sociais':    '#C0392B',
+  'Provisão':            '#16A085',
+  'default':             '#8E9BAE',
+};
+
+// Estrutura de grupos e categorias conforme o Resumo Geral da planilha
+// Cada item: { grupo, nome, rowOrc, rowGas }  (índice de linha no CSV, 0-based)
+// CSV linha 0 = título, linha 1 = cabeçalho, dados a partir de linha 2
+// Mapeamento baseado na estrutura real do Resumo Geral:
+//   L3  Alimentação - PLANO → L4 gasto
+//   L7  Material    - PLANO → L8 gasto
+//   L11 Alim.extra  - PLANO → L12 gasto
+//   L15 Higiene     - PLANO → L16 gasto
+//   L19 Custos ind. - PLANO → L20 gasto
+//   L22 RH          - PLANO → L23 gasto  (L23 ausente no resumo, pular)
+//   L25 = "ENCARGOS SOCIAIS" (seção)
+//   L26 FGTS        - PLANO → L27 gasto
+//   L29 INSS        - PLANO → L30 gasto
+//   L32 IRPF        - PLANO → L33 gasto
+//   L35 Vale Transp - PLANO → L36 gasto
+//   L38 Provisão    - PLANO → L39 gasto
+// (todas 1-indexed no xlsx; no CSV 0-indexed após parse)
+
+const ESTRUTURA = [
+  { grupo:'Alimentação',      nome:'Alimentação',              planoIdx:2,  gastoIdx:3  },
+  { grupo:'Material',         nome:'Material de escritório',   planoIdx:6,  gastoIdx:7  },
+  { grupo:'Alimentação',      nome:'Alimentação ativ. extra',  planoIdx:10, gastoIdx:11 },
+  { grupo:'Higiene',          nome:'Higiene/limpeza e EPI',    planoIdx:14, gastoIdx:15 },
+  { grupo:'Custos Indiretos', nome:'Custos Indiretos',         planoIdx:18, gastoIdx:19 },
+  { grupo:'Recursos Humanos', nome:'Recursos Humanos',         planoIdx:21, gastoIdx:22 },
+  // Encargos subcategorias
+  { grupo:'Encargos Sociais', nome:'FGTS',                     planoIdx:25, gastoIdx:26 },
+  { grupo:'Encargos Sociais', nome:'INSS',                     planoIdx:28, gastoIdx:29 },
+  { grupo:'Encargos Sociais', nome:'IRPF',                     planoIdx:31, gastoIdx:32 },
+  { grupo:'Encargos Sociais', nome:'Vale Transporte',          planoIdx:34, gastoIdx:35 },
+  { grupo:'Provisão',         nome:'Provisão',                 planoIdx:37, gastoIdx:38 },
+];
+
 let parcelas = [];
+let dados = [];   // [{ cat, orcado:[p1..p12], gasto:[p1..p12] }]
+let parcelaCols = [];
 
-// ── CSV PARSER ─────────────────────────────────────────
+// ── CSV PARSER ────────────────────────────────────────────
 function parseCSV(text) {
-  // Parser robusto que respeita campos entre aspas
   return text.trim().split('\n').map(line => {
-    const cols = [];
-    let cur = '', inQ = false;
+    const cols = []; let cur = '', inQ = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
       if (ch === '"') { inQ = !inQ; }
       else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
       else { cur += ch; }
     }
-    cols.push(cur.trim());
-    return cols;
+    cols.push(cur.trim()); return cols;
   });
 }
 
 function parseVal(str) {
   if (!str) return 0;
-  // Remove aspas, R$, espaços
-  let s = str.replace(/"/g, '').replace(/R\$\s*/g, '').trim();
-  // Formato brasileiro: 1.289,92 → remove pontos de milhar, troca vírgula por ponto
-  if (s.includes(',')) {
-    s = s.replace(/\./g, '').replace(',', '.');
-  }
+  let s = str.replace(/"/g,'').replace(/R\$\s*/g,'').trim();
+  if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.');
   const v = parseFloat(s);
   return isNaN(v) ? 0 : v;
 }
 
-// ── LOAD DATA ──────────────────────────────────────────
+// ── LOAD DATA ─────────────────────────────────────────────
 async function loadData() {
-  document.getElementById('loading-state').style.display = 'flex';
-  document.getElementById('main-content').style.display = 'none';
-  document.getElementById('error-state').style.display = 'none';
-  document.getElementById('sync-info').textContent = 'Sincronizando...';
-  document.getElementById('sync-info').className = 'sync-info';
+  show('loading-state');
+  hide('main-content'); hide('error-state');
+  setSyncBadge('loading','Sincronizando...');
 
   try {
-    // Fetch direto — funciona quando hospedado em HTTPS (GitHub Pages)
-    // O Google Sheets publica CSV com CORS aberto para domínios externos
-    const attempts = [
-      u => u + '&cachebust=' + Date.now(),
+    const proxies = [
+      u => u + '&cb=' + Date.now(),
       u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
       u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
       u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-      u => `https://cors.sh/${u}`,
     ];
-    let resp = null, text = null, lastErr = 'Todos os proxies falharam';
-    for (const makeUrl of attempts) {
+    let text = null, lastErr = 'Todos os proxies falharam';
+    for (const mk of proxies) {
       try {
-        const r = await fetch(makeUrl(CSV_URL), {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        });
+        const r = await fetch(mk(CSV_URL), { headers:{'X-Requested-With':'XMLHttpRequest'} });
         if (r.ok) {
           const buf = await r.arrayBuffer();
-          // Decodifica como UTF-8; se tiver caracteres ruins, tenta latin1
           let t = new TextDecoder('utf-8').decode(buf);
           if (t.includes('Ã')) t = new TextDecoder('latin1').decode(buf);
-          // Verifica se retornou CSV válido (não HTML de erro)
-          if (t && !t.trim().startsWith('<') && t.includes(',')) {
-            text = t; resp = r; break;
-          }
+          if (t && !t.trim().startsWith('<') && t.includes(',')) { text = t; break; }
         }
-        lastErr = 'Resposta inválida ou erro HTTP ' + r.status;
+        lastErr = 'HTTP ' + r.status;
       } catch(e) { lastErr = e.message; }
     }
     if (!text) throw new Error(lastErr);
     processCSV(text);
 
-    document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-    document.getElementById('error-state').style.display = 'none';
-
+    hide('loading-state'); hide('error-state'); show('main-content');
     const now = new Date();
     document.getElementById('hoje').textContent = now.toLocaleString('pt-BR');
-    document.getElementById('sync-info').textContent = '✓ Sincronizado às ' + now.toLocaleTimeString('pt-BR');
-    document.getElementById('sync-info').className = 'sync-info ok';
-
+    setSyncBadge('ok','Sincronizado às ' + now.toLocaleTimeString('pt-BR'));
     render();
   } catch(e) {
-    document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('error-state').style.display = 'block';
-    document.getElementById('error-msg').textContent = e.message + '. Verifique se a planilha está publicada.';
-    document.getElementById('sync-info').textContent = '✗ Falha na sincronização';
-    document.getElementById('sync-info').className = 'sync-info err';
+    hide('loading-state'); show('error-state');
+    document.getElementById('error-msg').textContent = e.message;
+    setSyncBadge('err','Falha na sincronização');
   }
 }
 
 function processCSV(text) {
   const rows = parseCSV(text);
-
-  // Detectar colunas de parcelas (linha 2 = cabeçalho)
-  // Linha index 1: Item, Parcela 01, Parcela 02, ..., TOTAL
   const header = rows[1] || [];
-  parcelas = [];
-  const parcelaCols = []; // índices das colunas de parcela
+  parcelas = []; parcelaCols = [];
   header.forEach((h, i) => {
-    if (h.match(/parcela\s*\d+/i)) {
-      parcelas.push(h.trim());
-      parcelaCols.push(i);
-    }
+    if (h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
   });
 
-  // Montar estrutura de categorias
-  // Padrão: grupo de 3 linhas por categoria:
-  //   [nome] - PLANO DE TRABALHO  → orçado
-  //   [nome] - QUANTO JÁ GASTOU   → gasto
-  //   [nome] - SALDO SOBRANDO     → (ignorado, calculado)
-  // Linha de SALDO TOTAL GERAL → ignorar
-  cats = [];
-  let i = 2; // pular linhas 0 (título) e 1 (cabeçalho)
-  while (i < rows.length) {
-    const row = rows[i];
-    const item = (row[0] || '').trim();
-    if (!item || item.match(/saldo total geral/i)) { i++; continue; }
+  dados = ESTRUTURA.map(e => ({
+    grupo: e.grupo,
+    nome: e.nome,
+    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx] || [])[ci])),
+    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
+  }));
 
-    // Tentar identificar linha de orçado
-    if (item.match(/plano de trabalho/i)) {
-      // Extrair nome da categoria (tudo antes do " - PLANO")
-      const nome = item.replace(/\s*[-–]\s*plano de trabalho.*/i, '').trim();
-      const orcado = parcelaCols.map(ci => parseVal(row[ci]));
-
-      // Próxima linha: gasto
-      const rowG = rows[i + 1] || [];
-      const gasto = parcelaCols.map(ci => parseVal(rowG[ci]));
-
-      cats.push({ nome, orcado, gasto });
-      i += 3; // pula orçado + gasto + saldo
-      continue;
-    }
-    i++;
-  }
-
-  // Rebuild selects
+  // Selects
   const selP = document.getElementById('sel-parcela');
-  selP.innerHTML = '<option value="-1">Todas as parcelas (total)</option>';
+  selP.innerHTML = '<option value="-1">Todas (total anual)</option>';
   parcelas.forEach((p, i) => {
     const o = document.createElement('option');
     o.value = i; o.textContent = p; selP.appendChild(o);
   });
 
+  const grupos = [...new Set(ESTRUTURA.map(e => e.grupo))];
+  const selG = document.getElementById('sel-grupo');
+  selG.innerHTML = '<option value="-1">Todos os grupos</option>';
+  grupos.forEach((g, i) => {
+    const o = document.createElement('option');
+    o.value = g; o.textContent = g; selG.appendChild(o);
+  });
+
   const selC = document.getElementById('sel-cat');
   selC.innerHTML = '<option value="-1">Todas as categorias</option>';
-  cats.forEach((c, i) => {
+  dados.forEach((d, i) => {
     const o = document.createElement('option');
-    o.value = i; o.textContent = c.nome; selC.appendChild(o);
+    o.value = i; o.textContent = d.nome; selC.appendChild(o);
   });
 }
 
-// ── HELPERS ────────────────────────────────────────────
-function fmt(v){return'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
-function pct(g,o){return o>0?Math.round(g/o*100):0}
-function sumCat(c,pi){
-  if(pi===-1) return{orc:c.orcado.reduce((a,b)=>a+b,0),gas:c.gasto.reduce((a,b)=>a+b,0)};
-  return{orc:c.orcado[pi]||0,gas:c.gasto[pi]||0};
+// ── HELPERS ───────────────────────────────────────────────
+function fmt(v) { return 'R$\u00a0' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pct(g, o) { return o > 0 ? Math.min(Math.round(g/o*100), 999) : 0; }
+function sumD(d, pi) {
+  if (pi === -1) return { orc: d.orcado.reduce((a,b)=>a+b,0), gas: d.gasto.reduce((a,b)=>a+b,0) };
+  return { orc: d.orcado[pi]||0, gas: d.gasto[pi]||0 };
+}
+function corGrupo(g) { return CORES_GRUPO[g] || CORES_GRUPO.default; }
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function setSyncBadge(state, text) {
+  const b = document.getElementById('sync-badge');
+  b.className = 'sync-badge' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+  document.getElementById('sync-text').textContent = text;
 }
 
-// ── CANVAS ─────────────────────────────────────────────
-function clearCanvas(canvas){
-  const ctx=canvas.getContext('2d');
-  canvas.width=canvas.offsetWidth||canvas.parentElement.clientWidth||400;
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  return ctx;
-}
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  if (!dados.length) return;
+  const pi   = parseInt(document.getElementById('sel-parcela').value);
+  const grpV = document.getElementById('sel-grupo').value;
+  const ci   = parseInt(document.getElementById('sel-cat').value);
 
-function drawBar(canvasId, labels, datasets, maxVal){
-  const canvas=document.getElementById(canvasId);
-  const ctx=clearCanvas(canvas);
-  const W=canvas.width, H=canvas.height;
-  const pad={top:10,right:10,bottom:40,left:70};
-  const chartW=W-pad.left-pad.right;
-  const chartH=H-pad.top-pad.bottom;
-  const n=labels.length, ds=datasets.length;
-  const groupW=chartW/n;
-  const barW=Math.min(groupW/(ds+1),28);
-  const gap=2;
-  const scale=chartH/maxVal;
-  ctx.strokeStyle='#eee';ctx.lineWidth=0.5;
-  for(let i=0;i<=4;i++){
-    const y=pad.top+chartH-i*chartH/4;
-    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
-    ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='right';
-    const val=maxVal*i/4;
-    ctx.fillText(val>=1000?'R$'+(val/1000).toFixed(0)+'k':'R$'+val.toFixed(0),pad.left-4,y+3);
-  }
-  datasets.forEach((ds2,di)=>{
-    ctx.fillStyle=ds2.color;
-    ds2.data.forEach((val,i)=>{
-      const x=pad.left+(i+0.5)*groupW-(ds*barW+(ds-1)*gap)/2+di*(barW+gap);
-      const h=val*scale;
-      const y=pad.top+chartH-h;
-      ctx.beginPath();
-      const r=3;
-      ctx.moveTo(x+r,y);ctx.lineTo(x+barW-r,y);
-      ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
-      ctx.lineTo(x+barW,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+r);
-      ctx.quadraticCurveTo(x,y,x+r,y);
-      ctx.closePath();ctx.fill();
-    });
-  });
-  ctx.fillStyle='#666';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
-  labels.forEach((lbl,i)=>{
-    const x=pad.left+(i+0.5)*groupW;
-    ctx.fillText(lbl.length>10?lbl.substring(0,9)+'…':lbl,x,H-pad.bottom+16);
-  });
-}
+  let filtrado = dados;
+  if (grpV !== '-1') filtrado = filtrado.filter(d => d.grupo === grpV);
+  if (ci   !== -1)   filtrado = filtrado.filter((d,i) => dados.indexOf(d) === ci);
 
-function drawPie(canvasId, labels, values, colors){
-  const canvas=document.getElementById(canvasId);
-  const ctx=clearCanvas(canvas);
-  const W=canvas.width, H=canvas.height;
-  const cx=W/2, cy=H/2, r=Math.min(cx,cy)-20, inner=r*0.58;
-  const total=values.reduce((a,b)=>a+b,0);
-  let angle=-Math.PI/2;
-  values.forEach((v,i)=>{
-    const sweep=2*Math.PI*v/total;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,angle,angle+sweep);
-    ctx.closePath();ctx.fillStyle=colors[i];ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-    angle+=sweep;
-  });
-  ctx.beginPath();ctx.arc(cx,cy,inner,0,2*Math.PI);ctx.fillStyle='#fff';ctx.fill();
-  ctx.fillStyle='#333';ctx.font='bold 13px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
-  ctx.fillText(fmt(total).replace('R$ ','R$'),cx,cy-2);
-  ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';
-  ctx.fillText('Total orçado',cx,cy+13);
-}
-
-function drawLine(canvasId, labels, values){
-  const canvas=document.getElementById(canvasId);
-  const ctx=clearCanvas(canvas);
-  const W=canvas.width, H=canvas.height;
-  const pad={top:10,right:16,bottom:30,left:70};
-  const chartW=W-pad.left-pad.right;
-  const chartH=H-pad.top-pad.bottom;
-  const maxV=Math.max(...values)*1.1||1;
-  const minV=Math.min(...values)*0.9;
-  const range=maxV-minV||1;
-  const xStep=chartW/(labels.length-1||1);
-  const toX=(i)=>pad.left+i*xStep;
-  const toY=(v)=>pad.top+chartH-(v-minV)/range*chartH;
-  ctx.strokeStyle='#eee';ctx.lineWidth=0.5;
-  for(let i=0;i<=4;i++){
-    const y=pad.top+i*chartH/4;
-    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
-    const val=maxV-(maxV-minV)*i/4;
-    ctx.fillStyle='#aaa';ctx.font='10px Segoe UI,Arial,sans-serif';ctx.textAlign='right';
-    ctx.fillText('R$'+(val/1000).toFixed(0)+'k',pad.left-4,y+3);
-  }
-  ctx.beginPath();ctx.moveTo(toX(0),toY(values[0]));
-  values.forEach((_,i)=>{if(i>0)ctx.lineTo(toX(i),toY(values[i]))});
-  ctx.lineTo(toX(values.length-1),pad.top+chartH);
-  ctx.lineTo(pad.left,pad.top+chartH);
-  ctx.closePath();ctx.fillStyle='rgba(29,158,117,.1)';ctx.fill();
-  ctx.beginPath();ctx.moveTo(toX(0),toY(values[0]));
-  values.forEach((_,i)=>{if(i>0)ctx.lineTo(toX(i),toY(values[i]))});
-  ctx.strokeStyle='#1D9E75';ctx.lineWidth=2;ctx.stroke();
-  values.forEach((v,i)=>{
-    ctx.beginPath();ctx.arc(toX(i),toY(v),3,0,2*Math.PI);
-    ctx.fillStyle='#1D9E75';ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-  });
-  ctx.fillStyle='#888';ctx.font='9px Segoe UI,Arial,sans-serif';ctx.textAlign='center';
-  labels.forEach((lbl,i)=>ctx.fillText(lbl,toX(i),H-pad.bottom+14));
-}
-
-// ── RENDER ─────────────────────────────────────────────
-function render(){
-  if(!cats.length) return;
-  const pi=parseInt(document.getElementById('sel-parcela').value);
-  const ci=parseInt(document.getElementById('sel-cat').value);
-  const filtCats=ci===-1?cats:[cats[ci]];
-  const parLabel=pi===-1?'Todas as parcelas':parcelas[pi];
-  const catLabel=ci===-1?'Todas as categorias':cats[ci].nome;
-  document.getElementById('sub-title').textContent=`Resumo geral · ${parLabel} · ${catLabel}`;
-  document.getElementById('table-title').textContent = pi===-1
-    ? 'Detalhamento por categoria — Total geral (12 parcelas)'
+  const parLabel = pi === -1 ? 'Todas as parcelas' : parcelas[pi];
+  document.getElementById('sub-title').textContent = `Termo de Fomento · ${parLabel}`;
+  document.getElementById('table-title').textContent = pi === -1
+    ? 'Detalhamento por categoria — Total anual (12 parcelas)'
     : `Detalhamento por categoria — ${parcelas[pi]}`;
-  document.getElementById('th-orc').textContent = pi===-1 ? 'Orçado (total)' : 'Orçado (parcela)';
+  document.getElementById('th-orc').textContent = pi === -1 ? 'Orçado (anual)' : 'Orçado (parcela)';
 
-  const totalOrc=filtCats.reduce((s,c)=>{const{orc}=sumCat(c,pi);return s+orc},0);
-  const totalGas=filtCats.reduce((s,c)=>{const{gas}=sumCat(c,pi);return s+gas},0);
-  const totalSal=totalOrc-totalGas;
-  const ex=pct(totalGas,totalOrc);
-  document.getElementById('cards-wrap').innerHTML=`
-    <div class="card"><div class="lbl">Orçamento</div><div class="val">${fmt(totalOrc)}</div><div class="sub">${pi===-1?parcelas.length+' parcelas':'Parcela '+(pi+1)}</div></div>
-    <div class="card ${ex>80?'amber':''}"><div class="lbl">Total gasto</div><div class="val">${fmt(totalGas)}</div><div class="sub">${ex}% executado</div></div>
-    <div class="card green"><div class="lbl">Saldo disponível</div><div class="val">${fmt(totalSal)}</div><div class="sub">Restante</div></div>
-    <div class="card ${ex===0?'':ex>90?'red':'amber'}"><div class="lbl">Execução</div><div class="val">${ex}%</div><div class="sub">${ex===0?'Não iniciado':ex>90?'Crítico':'Em andamento'}</div></div>`;
+  const totalOrc = filtrado.reduce((s,d) => s + sumD(d,pi).orc, 0);
+  const totalGas = filtrado.reduce((s,d) => s + sumD(d,pi).gas, 0);
+  const totalSal = totalOrc - totalGas;
+  const ex = pct(totalGas, totalOrc);
 
-  let alerts=[];
-  filtCats.forEach(c=>{
-    const{orc,gas}=sumCat(c,pi);
-    const p=pct(gas,orc);
-    if(p>=90) alerts.push({type:'warn',title:`⚠ ${c.nome} — Orçamento crítico`,msg:`${p}% do orçamento utilizado. Saldo restante: ${fmt(orc-gas)}.`});
-    else if(gas===0&&orc>0) alerts.push({type:'info',title:`${c.nome} — Sem gastos registrados`,msg:`Orçado: ${fmt(orc)}. Nenhum gasto lançado ainda.`});
+  // Cards
+  document.getElementById('cards-wrap').innerHTML = `
+    <div class="card">
+      <div class="card-lbl">💰 Orçamento total</div>
+      <div class="card-val">${fmt(totalOrc)}</div>
+      <div class="card-sub">${pi===-1?'12 parcelas':parcelas[pi]}</div>
+    </div>
+    <div class="card ${ex>80?'amber':''}">
+      <div class="card-lbl">📤 Total gasto</div>
+      <div class="card-val">${fmt(totalGas)}</div>
+      <div class="card-sub">${ex}% executado</div>
+    </div>
+    <div class="card green">
+      <div class="card-lbl">✅ Saldo disponível</div>
+      <div class="card-val">${fmt(totalSal)}</div>
+      <div class="card-sub">Restante</div>
+    </div>
+    <div class="card ${ex===0?'':'ex>90?red':'amber'}">
+      <div class="card-lbl">📊 Execução</div>
+      <div class="card-val">${ex}%</div>
+      <div class="card-sub">${ex===0?'Não iniciado':ex>90?'Crítico':ex>60?'Em andamento':'Normal'}</div>
+    </div>`;
+
+  // Alertas
+  const aw = document.getElementById('alerts-wrap');
+  aw.innerHTML = '';
+  let alertas = [];
+  filtrado.forEach(d => {
+    const {orc, gas} = sumD(d, pi);
+    const p = pct(gas, orc);
+    if (p >= 90 && orc > 0) alertas.push({type:'warn', title:`⚠ ${d.nome} — Orçamento crítico`, msg:`${p}% utilizado. Saldo restante: ${fmt(orc-gas)}.`});
+    else if (gas === 0 && orc > 0) alertas.push({type:'info', title:`${d.nome} — Sem gastos`, msg:`Orçado: ${fmt(orc)}. Nenhum lançamento registrado.`});
   });
-  if(ex>0&&ex<10) alerts.unshift({type:'ok',title:'Execução financeira baixa',msg:`Apenas ${ex}% do orçamento total foi executado. Verifique se os lançamentos estão em dia.`});
-  if(alerts.length===0) alerts.push({type:'ok',title:'Orçamento sob controle',msg:'Nenhum alerta identificado para a seleção atual.'});
-  const aw=document.getElementById('alerts-wrap');
-  aw.innerHTML='';
-  alerts.slice(0,4).forEach(a=>{
-    const icon=a.type==='warn'?'!':a.type==='ok'?'✓':'i';
-    aw.innerHTML+=`<div class="alert ${a.type}"><div class="alert-icon">${icon}</div><div><strong>${a.title}</strong>${a.msg}</div></div>`;
+  if (!alertas.length) alertas.push({type:'ok', title:'Orçamento sob controle', msg:'Nenhum alerta identificado para a seleção atual.'});
+  alertas.slice(0,4).forEach(a => {
+    const icon = a.type==='warn'?'!':a.type==='ok'?'✓':'i';
+    aw.innerHTML += `<div class="alert ${a.type}"><div class="alert-icon">${icon}</div><div><strong>${a.title}</strong>${a.msg}</div></div>`;
   });
 
-  const tb=document.getElementById('tbody');tb.innerHTML='';
-  // Quando parcela selecionada, mostrar detalhamento por categoria com valores daquela parcela
-  filtCats.forEach(c=>{
-    const {orc, gas} = sumCat(c, pi);
-    const sal=orc-gas;
-    const p=pct(gas,orc);
-    const st=gas===0?'zero':p>=90?'danger':p>60?'warn':'ok';
-    const stL=gas===0?'Sem gastos':p>=90?'Crítico':p>60?'Atenção':'Normal';
-    const pbC=p>=90?'danger':p>60?'warn':'';
-    const salColor=sal<0?'#E24B4A':'#1D9E75';
-    const gasColor=gas===0?'#aaa':p>=90?'#E24B4A':p>60?'#BA7517':'#1a1a1a';
-    tb.innerHTML+=`<tr>
-      <td><strong>${c.nome}</strong></td>
-      <td>${fmt(orc)}</td>
-      <td style="color:${gasColor};font-weight:500">${fmt(gas)}</td>
-      <td style="color:${salColor};font-weight:500">${fmt(sal)}</td>
+  // Tabela com agrupamento por seção
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  let lastGrupo = null;
+  filtrado.forEach(d => {
+    const {orc, gas} = sumD(d, pi);
+    const sal = orc - gas;
+    const p = pct(gas, orc);
+    const st = gas===0?'zero':p>=90?'danger':p>60?'warn':'ok';
+    const stL = gas===0?'Sem gastos':p>=90?'Crítico':p>60?'Atenção':'Normal';
+    const pbC = p>=90?'danger':p>60?'warn':'';
+    const salC = sal < 0 ? 'var(--red)' : 'var(--green)';
+    const gasC = gas===0?'var(--text3)':p>=90?'var(--red)':p>60?'var(--amber)':'var(--text)';
+    const isSub = d.grupo === 'Encargos Sociais';
+
+    // Cabeçalho de grupo
+    if (d.grupo !== lastGrupo) {
+      lastGrupo = d.grupo;
+      const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${corGrupo(d.grupo)};margin-right:6px"></span>`;
+      tb.innerHTML += `<tr class="section-row"><td colspan="6">${dot}${d.grupo}</td></tr>`;
+    }
+
+    tb.innerHTML += `<tr class="${isSub?'sub-row':''}">
+      <td><span style="font-weight:${isSub?'400':'600'}">${d.nome}</span></td>
+      <td class="mono">${fmt(orc)}</td>
+      <td class="mono" style="color:${gasC};font-weight:500">${fmt(gas)}</td>
+      <td class="mono" style="color:${salC};font-weight:500">${fmt(sal)}</td>
       <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="pb-outer" style="width:110px">
-            <div class="pb-inner ${pbC}" style="width:${Math.min(p,100)}%"></div>
-          </div>
-          <span style="font-size:12px;font-weight:600;color:${p>=90?'#E24B4A':p>60?'#BA7517':'#1D9E75'}">${p}%</span>
+        <div class="pb-wrap">
+          <div class="pb-outer"><div class="pb-inner ${pbC}" style="width:${Math.min(p,100)}%"></div></div>
+          <span class="pct-lbl" style="color:${p>=90?'var(--red)':p>60?'var(--amber)':'var(--green)'}">${p}%</span>
         </div>
       </td>
       <td><span class="pill ${st}">${stL}</span></td>
     </tr>`;
   });
 
-  const labels=filtCats.map(c=>c.nome);
-  const orcados=filtCats.map(c=>sumCat(c,pi).orc);
-  const gastos=filtCats.map(c=>sumCat(c,pi).gas);
-  const saldos=filtCats.map(c=>{const{orc,gas}=sumCat(c,pi);return orc-gas});
-  const maxVal=Math.max(...orcados,...gastos,...saldos)*1.1||1;
-  drawBar('barCanvas',labels,[{color:'#B5D4F4',data:orcados},{color:'#D85A30',data:gastos},{color:'#1D9E75',data:saldos}],maxVal);
-  document.getElementById('bar-title').textContent='Orçado vs Gasto vs Saldo'+(pi!==-1?' — '+parcelas[pi]:'');
+  // Bar chart
+  const labels = filtrado.map(d => d.nome.length > 12 ? d.nome.substring(0,11)+'…' : d.nome);
+  const orcados = filtrado.map(d => sumD(d,pi).orc);
+  const gastos  = filtrado.map(d => sumD(d,pi).gas);
+  const saldos  = filtrado.map(d => { const {orc,gas}=sumD(d,pi); return orc-gas; });
+  const maxVal  = Math.max(...orcados, ...gastos, ...saldos) * 1.12 || 1;
+  drawBar('barCanvas', labels,
+    [{color:'#B5D4F4',data:orcados},{color:'#E8724A',data:gastos},{color:'#0B8F64',data:saldos}],
+    maxVal);
+  document.getElementById('bar-title').textContent = 'Orçado vs Gasto vs Saldo' + (pi!==-1?' — '+parcelas[pi]:'');
 
-  const totais=cats.map(c=>c.orcado.reduce((a,b)=>a+b,0));
-  const pl=document.getElementById('pie-legend');
-  pl.innerHTML='';
-  const totalPie=totais.reduce((a,b)=>a+b,0);
-  cats.forEach((c,i)=>{
-    pl.innerHTML+=`<span><i style="background:${cores[i]}"></i>${c.nome.split(' ')[0]} ${Math.round(totais[i]/totalPie*100)}%</span>`;
+  // Pie (por grupo, todos os dados)
+  const grupos = [...new Set(dados.map(d=>d.grupo))];
+  const totaisPie = grupos.map(g => dados.filter(d=>d.grupo===g).reduce((s,d)=>s+sumD(d,-1).orc,0));
+  const coresPie  = grupos.map(g => corGrupo(g));
+  const pl = document.getElementById('pie-legend');
+  pl.innerHTML = '';
+  const totalPie = totaisPie.reduce((a,b)=>a+b,0);
+  grupos.forEach((g,i) => {
+    pl.innerHTML += `<span><i style="background:${coresPie[i]}"></i>${g.split(' ')[0]} ${Math.round(totaisPie[i]/totalPie*100)}%</span>`;
   });
-  drawPie('pieCanvas',cats.map(c=>c.nome),totais,cores);
+  drawPie('pieCanvas', grupos, totaisPie, coresPie);
 
-  const lineSaldos=Array.from({length:parcelas.length},(_,pIdx)=>
-    filtCats.reduce((s,c)=>s+(c.orcado[pIdx]||0)-(c.gasto[pIdx]||0),0));
-  drawLine('lineCanvas',parcelas.map((_,i)=>`P${i+1}`),lineSaldos);
+  // Line (saldo por parcela para filtrado)
+  const lineSaldos = Array.from({length: parcelas.length}, (_,pIdx) =>
+    filtrado.reduce((s,d) => s + (d.orcado[pIdx]||0) - (d.gasto[pIdx]||0), 0));
+  drawLine('lineCanvas', parcelas.map((_,i) => `P${i+1}`), lineSaldos);
 }
 
-let resizeTimer;
-window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(render,150)});
+// ── CANVAS HELPERS ────────────────────────────────────────
+function clearCanvas(id) {
+  const c = document.getElementById(id);
+  c.width = c.offsetWidth || c.parentElement.clientWidth || 500;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  return {ctx, W:c.width, H:c.height};
+}
 
-// Carregar ao iniciar
+function drawBar(id, labels, datasets, maxVal) {
+  const {ctx,W,H} = clearCanvas(id);
+  const pad = {top:10,right:10,bottom:42,left:72};
+  const cW = W-pad.left-pad.right, cH = H-pad.top-pad.bottom;
+  const n = labels.length, ds = datasets.length;
+  const groupW = cW/n, barW = Math.min(groupW/(ds+1), 26), gap = 2;
+  const scale = cH/maxVal;
+
+  ctx.strokeStyle='#E8EBF0'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) {
+    const y = pad.top + cH - i*cH/4;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const val = maxVal*i/4;
+    ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
+    ctx.fillText(val>=1000?'R$'+(val/1000).toFixed(0)+'k':'R$'+val.toFixed(0), pad.left-4, y+3);
+  }
+
+  datasets.forEach((ds2, di) => {
+    ctx.fillStyle = ds2.color;
+    ds2.data.forEach((val,i) => {
+      const x = pad.left + (i+0.5)*groupW - (ds*barW+(ds-1)*gap)/2 + di*(barW+gap);
+      const h = val*scale, y = pad.top+cH-h;
+      ctx.beginPath();
+      const r = Math.min(3,h/2);
+      ctx.moveTo(x+r,y); ctx.lineTo(x+barW-r,y);
+      ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+      ctx.lineTo(x+barW,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); ctx.fill();
+    });
+  });
+
+  ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  labels.forEach((lbl,i) => {
+    const x = pad.left + (i+0.5)*groupW;
+    ctx.fillText(lbl, x, H-pad.bottom+16);
+  });
+}
+
+function drawPie(id, labels, values, colors) {
+  const {ctx,W,H} = clearCanvas(id);
+  const cx=W/2, cy=H/2, r=Math.min(cx,cy)-16, inner=r*0.62;
+  const total = values.reduce((a,b)=>a+b,0);
+  let angle = -Math.PI/2;
+  values.forEach((v,i) => {
+    const sweep = 2*Math.PI*v/total;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+sweep);
+    ctx.closePath(); ctx.fillStyle=colors[i]; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    angle += sweep;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,inner,0,2*Math.PI); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='#0D1117'; ctx.font='bold 12px DM Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(fmt(total).replace('R$\u00a0','R$ '), cx, cy);
+  ctx.fillStyle='#9CA3AF'; ctx.font='10px DM Sans,sans-serif';
+  ctx.fillText('Total orçado', cx, cy+15);
+}
+
+function drawLine(id, labels, values) {
+  const {ctx,W,H} = clearCanvas(id);
+  const pad = {top:10,right:16,bottom:30,left:72};
+  const cW=W-pad.left-pad.right, cH=H-pad.top-pad.bottom;
+  const maxV = Math.max(...values)*1.1||1, minV=Math.min(...values)*0.9, range=maxV-minV||1;
+  const toX = i => pad.left + i*(cW/(labels.length-1||1));
+  const toY = v => pad.top + cH - (v-minV)/range*cH;
+
+  ctx.strokeStyle='#E8EBF0'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) {
+    const y = pad.top + i*cH/4;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const val = maxV-(maxV-minV)*i/4;
+    ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
+    ctx.fillText('R$'+(val/1000).toFixed(0)+'k', pad.left-4, y+3);
+  }
+
+  // Fill
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((_,i) => { if(i>0) ctx.lineTo(toX(i),toY(values[i])); });
+  ctx.lineTo(toX(values.length-1), pad.top+cH); ctx.lineTo(pad.left, pad.top+cH);
+  ctx.closePath(); ctx.fillStyle='rgba(11,143,100,.08)'; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((_,i) => { if(i>0) ctx.lineTo(toX(i),toY(values[i])); });
+  ctx.strokeStyle='#0B8F64'; ctx.lineWidth=2; ctx.stroke();
+
+  // Dots
+  values.forEach((v,i) => {
+    ctx.beginPath(); ctx.arc(toX(i), toY(v), 3, 0, 2*Math.PI);
+    ctx.fillStyle='#0B8F64'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+
+  ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  labels.forEach((lbl,i) => ctx.fillText(lbl, toX(i), H-pad.bottom+14));
+}
+
+// Redraw on resize
+let _rt;
+window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(render, 150); });
+
+// Init
 loadData();
 </script>
 </body>
