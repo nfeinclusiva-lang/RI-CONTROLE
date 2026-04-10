@@ -1,100 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Despesas</title>
+
+<style>
+body {
+  font-family: Arial;
+  background:#f5f6fa;
+  padding:20px;
+}
+h1 { margin-bottom:20px; }
+
+.card {
+  background:#fff;
+  padding:15px;
+  margin-bottom:10px;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+</style>
+</head>
+
+<body>
+
+<h1>Controle de Despesas</h1>
+
+<div id="app"></div>
+
 <script>
-// CONFIG
-const APPS_URL = 'https://script.google.com/macros/s/AKfycbw7bsRGnVhmLl0Xrg96SVbnTIEt0KBG_N-bV5WgvaM_MrqyDyB1Jj3oWog_25_bSqZR/exec';
+// ================= CONFIG =================
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
 
 let dados = [];
 let parcelas = [];
 let parcelaCols = [];
 
-// =========================
-// FUNÇÕES INTELIGENTES
-// =========================
-
-function normalizar(txt) {
-  return (txt || '')
+// ================= FUNÇÕES =================
+function normalizar(txt){
+  return (txt||'')
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g,"")
     .trim();
 }
 
-function identificarTipoLinha(texto) {
+function identificarTipoLinha(texto){
   texto = normalizar(texto);
-  if (texto.includes('plano')) return 'orcado';
-  if (texto.includes('gasto')) return 'gasto';
-  if (texto.includes('saldo')) return 'saldo';
+  if(texto.includes('plano')) return 'orcado';
+  if(texto.includes('gasto')) return 'gasto';
   return null;
 }
 
-function extrairCategoria(texto) {
+function extrairCategoria(texto){
   texto = normalizar(texto);
   return texto
-    .replace(/- plano de trabalho/g, '')
-    .replace(/- quanto ja gastou/g, '')
-    .replace(/- saldo sobrando/g, '')
-    .replace(/- plano/g, '')
-    .replace(/- gasto/g, '')
-    .replace(/- saldo/g, '')
+    .replace(/- plano de trabalho/g,'')
+    .replace(/- quanto ja gastou/g,'')
+    .replace(/- saldo sobrando/g,'')
+    .replace(/- plano/g,'')
+    .replace(/- gasto/g,'')
     .trim();
 }
 
-function detectarGrupo(categoria) {
-  const c = normalizar(categoria);
-
-  if (c.includes('alimentacao')) return 'Alimentação';
-  if (c.includes('material')) return 'Material';
-  if (c.includes('higiene')) return 'Higiene';
-  if (c.includes('custo')) return 'Custos Indiretos';
-  if (c.includes('humano')) return 'Recursos Humanos';
-  if (c.includes('fgts') || c.includes('inss') || c.includes('irpf') || c.includes('vale')) return 'Encargos Sociais';
-  if (c.includes('provisao')) return 'Provisão';
-
+function detectarGrupo(cat){
+  const c = normalizar(cat);
+  if(c.includes('alimentacao')) return 'Alimentação';
+  if(c.includes('material')) return 'Material';
+  if(c.includes('higiene')) return 'Higiene';
+  if(c.includes('custo')) return 'Custos Indiretos';
+  if(c.includes('humano')) return 'RH';
+  if(c.includes('fgts')||c.includes('inss')||c.includes('irpf')||c.includes('vale')) return 'Encargos';
+  if(c.includes('provisao')) return 'Provisão';
   return 'Outros';
 }
 
-// =========================
-// CSV
-// =========================
-
-function parseCSV(text) {
-  return text.trim().split('\n').map(line => line.split(','));
+function parseCSV(text){
+  return text.split('\n').map(l=>l.split(','));
 }
 
-function parseVal(v) {
-  if (!v) return 0;
+function parseVal(v){
+  if(!v) return 0;
   return parseFloat(
     v.replace(/R\$/g,'')
      .replace(/\./g,'')
-     .replace(',', '.')
-  ) || 0;
+     .replace(',','.')
+  )||0;
 }
 
-// =========================
-// LOAD
-// =========================
-
-async function loadData() {
-  const res = await fetch(CSV_URL);
-  const text = await res.text();
-  processCSV(text);
-  render();
-}
-
-// =========================
-// PROCESSAMENTO DINÂMICO
-// =========================
-
-function processCSV(text) {
+// ================= PROCESS =================
+function processCSV(text){
   const rows = parseCSV(text);
 
-  // identificar colunas de parcelas
   const header = rows[1];
   parcelas = [];
   parcelaCols = [];
 
-  header.forEach((h, i) => {
-    if (h && h.toLowerCase().includes('parcela')) {
+  header.forEach((h,i)=>{
+    if(h && h.toLowerCase().includes('parcela')){
       parcelas.push(h);
       parcelaCols.push(i);
     }
@@ -102,44 +106,66 @@ function processCSV(text) {
 
   const mapa = {};
 
-  rows.forEach((row) => {
+  rows.forEach(row=>{
     const titulo = row[0];
-    if (!titulo) return;
+    if(!titulo) return;
 
     const tipo = identificarTipoLinha(titulo);
-    if (!tipo) return;
+    if(!tipo) return;
 
     const categoria = extrairCategoria(titulo);
-    if (!categoria) return;
+    if(!categoria) return;
 
-    if (!mapa[categoria]) {
-      mapa[categoria] = {
+    if(!mapa[categoria]){
+      mapa[categoria]={
         grupo: detectarGrupo(categoria),
-        nome: categoria.charAt(0).toUpperCase() + categoria.slice(1),
-        orcado: Array(parcelaCols.length).fill(0),
-        gasto: Array(parcelaCols.length).fill(0),
+        nome: categoria,
+        orcado:Array(parcelaCols.length).fill(0),
+        gasto:Array(parcelaCols.length).fill(0)
       };
     }
 
-    parcelaCols.forEach((ci, idx) => {
-      const valor = parseVal(row[ci]);
-
-      if (tipo === 'orcado') mapa[categoria].orcado[idx] = valor;
-      if (tipo === 'gasto')  mapa[categoria].gasto[idx]  = valor;
+    parcelaCols.forEach((ci,idx)=>{
+      const val = parseVal(row[ci]);
+      if(tipo==='orcado') mapa[categoria].orcado[idx]=val;
+      if(tipo==='gasto') mapa[categoria].gasto[idx]=val;
     });
   });
 
   dados = Object.values(mapa);
 }
 
-// =========================
-// RENDER SIMPLES (teste)
-// =========================
+// ================= RENDER =================
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
 
-function render() {
-  console.log('DADOS FINAL:', dados);
+  dados.forEach(d=>{
+    const totalOrc = d.orcado.reduce((a,b)=>a+b,0);
+    const totalGas = d.gasto.reduce((a,b)=>a+b,0);
+
+    app.innerHTML += `
+      <div class="card">
+        <strong>${d.nome}</strong><br>
+        Grupo: ${d.grupo}<br>
+        Orçado: R$ ${totalOrc.toFixed(2)}<br>
+        Gasto: R$ ${totalGas.toFixed(2)}<br>
+        Saldo: R$ ${(totalOrc-totalGas).toFixed(2)}
+      </div>
+    `;
+  });
 }
 
-// INIT
+// ================= LOAD =================
+async function loadData(){
+  const res = await fetch(CSV_URL);
+  const text = await res.text();
+  processCSV(text);
+  render();
+}
+
 loadData();
 </script>
+
+</body>
+</html>
