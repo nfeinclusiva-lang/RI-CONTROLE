@@ -271,7 +271,7 @@ tr:hover td{background:#FAFBFC}
 <script>
 // ── CONFIG ───────────────────────────────────────────────
 // URL do Google Apps Script (sem CORS, sem proxy)
-const APPS_URL = 'https://script.google.com/macros/s/AKfycbwgvzZRz5nxucHdg5Ux9cR3ga0R3cFBH6MBW-FyH7oHIRak410Uby1EQdHz9KSQo0QQ3A/exec';
+const APPS_URL = 'https://script.google.com/macros/s/AKfycbwiwUE3AK4Kdg24DrqUyAScVl_lI-6CnEXm59MT5wZ9wL-tmSEc9z0NaLvWVYsIBA5UVQ/exec';
 // CSV direto como fallback
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
 const CSV_ENC = encodeURIComponent(CSV_URL);
@@ -313,7 +313,6 @@ const ESTRUTURA = [
   { grupo:'Higiene',          nome:'Higiene/limpeza e EPI',    planoIdx:14, gastoIdx:15 },
   { grupo:'Custos Indiretos', nome:'Custos Indiretos',         planoIdx:18, gastoIdx:19 },
   { grupo:'Recursos Humanos', nome:'Recursos Humanos',         planoIdx:21, gastoIdx:22 },
-  // Encargos subcategorias
   { grupo:'Encargos Sociais', nome:'FGTS',                     planoIdx:25, gastoIdx:26 },
   { grupo:'Encargos Sociais', nome:'INSS',                     planoIdx:28, gastoIdx:29 },
   { grupo:'Encargos Sociais', nome:'IRPF',                     planoIdx:31, gastoIdx:32 },
@@ -431,12 +430,11 @@ async function loadData() {
 function processCSV(text) {
   const rows = parseCSV(text);
 
-  // Encontra a linha do cabeçalho procurando por "Parcela" em qualquer linha
-  let headerIdx = -1;
+  // Cabeçalho está na linha 2 da planilha = índice 1 do array
+  let headerIdx = 1;
   rows.forEach((row, i) => {
     if (row.some(h => h && h.match(/parcela\s*\d+/i))) headerIdx = i;
   });
-  if (headerIdx === -1) headerIdx = 1; // fallback linha 1
 
   const header = rows[headerIdx] || [];
   parcelas = []; parcelaCols = [];
@@ -444,13 +442,14 @@ function processCSV(text) {
     if (h && h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
   });
 
-  // Ajusta índices da ESTRUTURA relativo ao headerIdx
-  const offset = headerIdx - 1; // linha 1 no xlsx = linha headerIdx no CSV
+  // Índices da ESTRUTURA são 0-based (linha 1 da planilha = índice 0 do array rows)
+  // A planilha começa: linha1=título, linha2=cabeçalho, linha3=dados
+  // rows[0]=título, rows[1]=cabeçalho, rows[2]=primeira linha de dados
   dados = ESTRUTURA.map(e => ({
     grupo: e.grupo,
     nome: e.nome,
-    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx + offset] || [])[ci])),
-    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx  + offset] || [])[ci])),
+    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx] || [])[ci])),
+    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
   }));
 
   // Selects
