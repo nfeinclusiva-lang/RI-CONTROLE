@@ -270,6 +270,9 @@ tr:hover td{background:#FAFBFC}
 
 <script>
 // ── CONFIG ───────────────────────────────────────────────
+// URL do Google Apps Script (sem CORS, sem proxy)
+const APPS_URL = 'https://script.google.com/macros/s/AKfycbyIog72cRYPpTlMtrmzesF35BJb4vaJ1sVDna6s0klExgG1nOHvwEaoL45S7uE-qiBqww/exec';
+// CSV direto como fallback
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
 const CSV_ENC = encodeURIComponent(CSV_URL);
 
@@ -375,14 +378,14 @@ async function loadData() {
   hide('main-content'); hide('error-state');
   setSyncBadge('loading', 'Sincronizando...');
 
-  // Proxies em ordem de confiabilidade
+  // Apps Script primeiro (sem CORS), depois proxies como fallback
   const proxies = [
+    APPS_URL + '?cb=' + Date.now(),
     `https://api.allorigins.win/raw?url=${CSV_ENC}`,
     `https://corsproxy.io/?${CSV_ENC}`,
     `https://api.codetabs.com/v1/proxy?quest=${CSV_ENC}`,
     `https://thingproxy.freeboard.io/fetch/${CSV_URL}`,
-    `https://jsonp.afeld.me/?url=${CSV_ENC}`,
-    CSV_URL + '&cb=' + Date.now(),  // direto por último
+    CSV_URL + '&cb=' + Date.now(),
   ];
 
   let text = null;
