@@ -344,43 +344,61 @@ function parseVal(str) {
 }
 
 // ── LOAD DATA ─────────────────────────────────────────────
+async function fetchWithTimeout(url, ms=9000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(id); return r;
+  } catch(e) { clearTimeout(id); throw e; }
+}
+
 async function loadData() {
   show('loading-state');
   hide('main-content'); hide('error-state');
-  setSyncBadge('loading','Sincronizando...');
+  setSyncBadge('loading', 'Sincronizando...');
+
+  const proxies = [
+    () => fetchWithTimeout(CSV_URL + '&cb=' + Date.now()),
+    () => fetchWithTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(CSV_URL)),
+    () => fetchWithTimeout('https://corsproxy.io/?' + encodeURIComponent(CSV_URL)),
+    () => fetchWithTimeout('https://thingproxy.freeboard.io/fetch/' + CSV_URL),
+    () => fetchWithTimeout('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(CSV_URL)),
+  ];
+
+  let text = null;
+  for (const attempt of proxies) {
+    try {
+      const r = await attempt();
+      if (!r || !r.ok) continue;
+      const buf = await r.arrayBuffer();
+      let t = new TextDecoder('utf-8').decode(buf);
+      if (t.includes('\u00c3')) t = new TextDecoder('latin1').decode(buf);
+      if (t && t.length > 20 && !t.trim().startsWith('<') && t.includes(',')) {
+        text = t; break;
+      }
+    } catch(e) { /* tenta próximo proxy */ }
+  }
+
+  if (!text) {
+    hide('loading-state'); show('error-state');
+    document.getElementById('error-msg').textContent =
+      'Não foi possível acessar a planilha. Verifique se ela está publicada corretamente no Google Sheets (Arquivo → Compartilhar → Publicar na web → selecionar aba "Resumo Geral" → CSV).';
+    setSyncBadge('err', 'Falha na sincronização');
+    return;
+  }
 
   try {
-    const proxies = [
-      u => u + '&cb=' + Date.now(),
-      u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-      u => `https://corsproxy.io/?url=${encodeURIComponent(u)}`,
-      u => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-    ];
-    let text = null, lastErr = 'Todos os proxies falharam';
-    for (const mk of proxies) {
-      try {
-        const r = await fetch(mk(CSV_URL), { headers:{'X-Requested-With':'XMLHttpRequest'} });
-        if (r.ok) {
-          const buf = await r.arrayBuffer();
-          let t = new TextDecoder('utf-8').decode(buf);
-          if (t.includes('Ã')) t = new TextDecoder('latin1').decode(buf);
-          if (t && !t.trim().startsWith('<') && t.includes(',')) { text = t; break; }
-        }
-        lastErr = 'HTTP ' + r.status;
-      } catch(e) { lastErr = e.message; }
-    }
-    if (!text) throw new Error(lastErr);
     processCSV(text);
-
     hide('loading-state'); hide('error-state'); show('main-content');
     const now = new Date();
     document.getElementById('hoje').textContent = now.toLocaleString('pt-BR');
-    setSyncBadge('ok','Sincronizado às ' + now.toLocaleTimeString('pt-BR'));
+    setSyncBadge('ok', 'Sincronizado às ' + now.toLocaleTimeString('pt-BR'));
     render();
   } catch(e) {
     hide('loading-state'); show('error-state');
-    document.getElementById('error-msg').textContent = e.message;
-    setSyncBadge('err','Falha na sincronização');
+    document.getElementById('error-msg').textContent = 'Erro ao processar dados: ' + e.message;
+    setSyncBadge('err', 'Erro nos dados');
   }
 }
 
