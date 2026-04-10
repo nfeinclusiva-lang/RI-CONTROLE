@@ -49,6 +49,9 @@ input:focus,select:focus{border-color:#2563eb;background:#fff;}
 .donut-legend-item{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#6b7280;padding:3px 0;}
 .donut-legend-item span:first-child{display:flex;align-items:center;gap:6px;}
 .donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.erro-box{background:#fff3f3;border:1px solid #fecaca;border-radius:10px;padding:20px;color:#7f1d1d;font-size:13px;line-height:1.8;}
+.erro-box strong{display:block;margin-bottom:8px;font-size:15px;}
+.erro-box code{background:#fee2e2;padding:2px 6px;border-radius:4px;font-size:12px;}
 @media(max-width:600px){
   .metrics{grid-template-columns:1fr;}
   .charts-row{grid-template-columns:1fr;}
@@ -59,11 +62,19 @@ input:focus,select:focus{border-color:#2563eb;background:#fff;}
 <body>
 <div class="db">
   <div class="tab-bar" id="tabBar"></div>
-  <div id="dashContent"></div>
+  <div id="dashContent"><div style="color:#9ca3af;padding:40px;text-align:center;font-size:14px;">Carregando dados...</div></div>
 </div>
 
 <script>
-const CSV_URL = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv');
+const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
+
+const PROXIES = [
+  url => url,
+  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+];
 
 const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16'];
 let allData = {parcelas:[], categorias:[], lancamentos:[]};
@@ -112,13 +123,11 @@ function processCSV(text){
     });
   });
   allData.categorias=Object.values(mapa);
-  allData.lancamentos=[];
 }
 
 function getParcelaData(pi){
   return allData.categorias.map(c=>({nome:c.nome,orcado:c.orcado[pi]||0,gasto:c.gasto[pi]||0}));
 }
-
 function getSummary(pi){
   const cats=getParcelaData(pi);
   let orc=0,gas=0;
@@ -136,8 +145,7 @@ function renderTabs(){
   allData.parcelas.forEach((p,i)=>{
     const btn=document.createElement('button');
     btn.className='tab'+(i===currentParcela?' active':'');
-    btn.textContent='P'+(i+1);
-    btn.title=p;
+    btn.textContent='P'+(i+1);btn.title=p;
     btn.onclick=()=>{currentParcela=i;renderTabs();renderDash();};
     bar.appendChild(btn);
   });
@@ -293,19 +301,44 @@ function deleteLanc(id){
   renderLancamentos();
 }
 
+function mostrarErro(){
+  document.getElementById('dashContent').innerHTML=`
+  <div class="erro-box">
+    <strong>Não foi possível carregar os dados da planilha.</strong>
+    O navegador bloqueou a requisição por política de CORS (segurança). Isso é comum ao abrir o arquivo diretamente pelo Explorador de Arquivos (<code>file://</code>).<br><br>
+    <strong>Solução mais simples — rodar um servidor local:</strong><br>
+    1. Abra o terminal na pasta onde está o arquivo HTML<br>
+    2. Execute: <code>npx serve .</code><br>
+    3. Acesse <code>http://localhost:3000</code> no navegador<br><br>
+    <strong>Alternativa — extensão no Chrome:</strong><br>
+    Instale <a href="https://chrome.google.com/webstore/detail/allow-cors/lhobafahddgcelffkeicbaginigeejlf" target="_blank" style="color:#1d4ed8;">Allow CORS: Access-Control-Allow-Origin</a> e recarregue a página.
+  </div>`;
+}
+
+async function tryFetch(url){
+  const res = await fetch(url, {cache:'no-cache'});
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const text = await res.text();
+  if(!text || text.trim().length < 20) throw new Error('resposta vazia');
+  return text;
+}
+
 async function loadData(){
-  document.getElementById('dashContent').innerHTML='<div style="color:#9ca3af;padding:40px;text-align:center;font-size:14px;">Carregando dados...</div>';
-  try{
-    const res=await fetch(CSV_URL);
-    const text=await res.text();
-    processCSV(text);
-    currentParcela=0;
-    renderTabs();
-    renderDash();
-  }catch(e){
-    document.getElementById('dashContent').innerHTML='<div style="color:#ef4444;padding:40px;text-align:center;">Erro ao carregar dados da planilha.</div>';
-    console.error(e);
+  for(const makeUrl of PROXIES){
+    try{
+      const url = makeUrl(SHEET_CSV);
+      const text = await tryFetch(url);
+      processCSV(text);
+      if(allData.categorias.length === 0) continue;
+      currentParcela = 0;
+      renderTabs();
+      renderDash();
+      return;
+    }catch(e){
+      console.warn('Tentativa falhou:', e.message);
+    }
   }
+  mostrarErro();
 }
 
 loadData();
