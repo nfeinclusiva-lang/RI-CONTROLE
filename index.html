@@ -3,184 +3,798 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Controle de Despesas</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<meta name="description" content="Dashboard de controle de despesas do Termo de Fomento. Acompanhe orçado, gasto e saldo por parcela e categoria.">
+<meta property="og:title" content="Controle de Despesas — Termo de Fomento">
+<meta property="og:description" content="Dashboard de controle de despesas com gráficos e tabelas detalhadas.">
+<meta property="og:type" content="website">
+<meta http-equiv="Cache-Control" content="no-cache">
+<title>Controle de Despesas — Termo de Fomento</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background:#f4f6f9;
-  margin:0;
-  padding:20px;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F0F2F5;
+  --surface:#FFFFFF;
+  --surface2:#F7F8FA;
+  --border:#E4E7EC;
+  --text:#0D1117;
+  --text2:#5A6478;
+  --text3:#9CA3AF;
+  --green:#0B8F64;
+  --green-bg:#E6F5F0;
+  --amber:#A05C00;
+  --amber-bg:#FEF3E2;
+  --red:#C0392B;
+  --red-bg:#FEE2E2;
+  --blue:#1D6FA8;
+  --blue-bg:#EBF4FB;
+  --purple:#5B4FCF;
+  --purple-bg:#EFEDFC;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
 }
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
 
-h1 { margin-bottom:20px; }
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo svg{display:block}
+.topbar h1{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-badge{font-size:11px;padding:4px 10px;border-radius:99px;background:var(--surface2);color:var(--text3);border:1px solid var(--border);display:flex;align-items:center;gap:5px}
+.sync-badge.ok{background:var(--green-bg);color:var(--green);border-color:#A3D9C4}
+.sync-badge.err{background:var(--red-bg);color:var(--red);border-color:#FECACA}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn{font-size:12px;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:6px;font-family:inherit;font-weight:500;transition:all .15s}
+.btn:hover{background:var(--surface2);color:var(--text)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green)}
+.btn.primary:hover{background:#097a55}
 
-.cards {
-  display:grid;
-  grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-  gap:10px;
-  margin-bottom:20px;
+/* ── PAGE ── */
+.page{max-width:1200px;margin:0 auto;padding:24px 24px 40px}
+
+/* ── LOADING ── */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 20px;gap:16px}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading p{font-size:13px;color:var(--text3)}
+.error-box{background:var(--red-bg);border:1px solid #FECACA;border-radius:var(--radius);padding:24px;text-align:left;color:var(--red);margin-bottom:20px;line-height:1.8}
+.error-box strong{display:block;margin-bottom:10px;font-size:15px;text-align:center}
+
+/* ── CARDS ── */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+@media(max-width:720px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.card-lbl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.card-val{font-size:22px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;letter-spacing:-.02em}
+.card-sub{font-size:11px;color:var(--text3);margin-top:4px}
+.card.green .card-val{color:var(--green)}
+.card.amber .card-val{color:var(--amber)}
+.card.red .card-val{color:var(--red)}
+.card.blue .card-val{color:var(--blue)}
+
+/* ── ALERTS ── */
+.alerts{margin-bottom:20px;display:flex;flex-direction:column;gap:8px}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);font-size:12.5px;line-height:1.5}
+.alert-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px}
+.alert.warn{background:var(--amber-bg);color:#5C3600;border:1px solid #F4C97A}
+.alert.warn .alert-icon{background:var(--amber);color:#fff}
+.alert.ok{background:var(--green-bg);color:#084D35;border:1px solid #8DCDB6}
+.alert.ok .alert-icon{background:var(--green);color:#fff}
+.alert.info{background:var(--blue-bg);color:#0D3B5C;border:1px solid #90C5E8}
+.alert.info .alert-icon{background:var(--blue);color:#fff}
+.alert strong{font-weight:600;margin-right:4px}
+
+/* ── FILTERS ── */
+.filters-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 18px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:20px;box-shadow:var(--shadow)}
+.filters-bar label{font-size:12px;color:var(--text2);font-weight:500}
+select{font-size:12.5px;padding:6px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit;outline:none}
+select:focus{border-color:var(--green)}
+.filters-divider{width:1px;height:24px;background:var(--border)}
+
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+@media(max-width:680px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.chart-card.full{margin-bottom:14px}
+.chart-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;font-size:11px;color:var(--text2)}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block;flex-shrink:0}
+canvas{display:block;width:100%!important}
+
+/* ── TABLE ── */
+.table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-header h3{font-size:13px;font-weight:600;color:var(--text)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{font-weight:600;color:var(--text3);text-align:left;padding:9px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;background:var(--surface2);border-bottom:1px solid var(--border)}
+td{padding:10px 16px;color:var(--text);border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFBFC}
+
+/* Section rows */
+.section-row td{background:#F0F2F5;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);padding:6px 16px;border-bottom:1px solid var(--border)}
+.sub-row td:first-child{padding-left:30px;color:var(--text2)}
+
+/* Pills */
+.pill{display:inline-block;font-size:10.5px;padding:3px 9px;border-radius:99px;font-weight:600}
+.pill.ok{background:var(--green-bg);color:var(--green)}
+.pill.warn{background:var(--amber-bg);color:var(--amber)}
+.pill.zero{background:var(--surface2);color:var(--text3)}
+.pill.danger{background:var(--red-bg);color:var(--red)}
+
+/* Progress bar */
+.pb-wrap{display:flex;align-items:center;gap:8px}
+.pb-outer{height:5px;background:var(--border);border-radius:3px;width:100px;flex-shrink:0}
+.pb-inner{height:5px;border-radius:3px;background:var(--green);display:block;transition:width .3s}
+.pb-inner.warn{background:#E8A430}
+.pb-inner.danger{background:var(--red)}
+.pct-lbl{font-size:11px;font-weight:600;font-family:'DM Mono',monospace;min-width:32px}
+
+/* Mono values */
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+
+/* ── FOOTER ── */
+.footer{text-align:center;font-size:11px;color:var(--text3);margin-top:8px}
+
+#main-content{display:none}
+
+@media print{
+  .topbar,.btn,.filters-bar{display:none!important}
+  .page{padding:0}
+  body{background:#fff}
+  .charts-grid{grid-template-columns:1fr 1fr!important}
 }
-
-.card {
-  background:#fff;
-  padding:15px;
-  border-radius:10px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.08);
-}
-
-.card h3 {
-  margin:0;
-  font-size:14px;
-  color:#666;
-}
-
-.card p {
-  font-size:18px;
-  font-weight:bold;
-}
-
-canvas {
-  background:#fff;
-  padding:10px;
-  border-radius:10px;
-  margin-bottom:20px;
-}
-
-table {
-  width:100%;
-  border-collapse:collapse;
-  background:#fff;
-}
-
-th, td {
-  padding:10px;
-  border-bottom:1px solid #eee;
-}
-
-th { background:#fafafa; }
 </style>
 </head>
-
 <body>
 
-<h1>📊 Controle de Despesas</h1>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="2" y="9" width="3" height="7" rx="1" fill="#fff" opacity=".7"/>
+        <rect x="7.5" y="5" width="3" height="11" rx="1" fill="#fff" opacity=".9"/>
+        <rect x="13" y="2" width="3" height="14" rx="1" fill="#fff"/>
+      </svg>
+    </div>
+    <div>
+      <div style="font-size:15px;font-weight:600">Controle de Despesas</div>
+      <div class="topbar-sub" id="sub-title">Termo de Fomento · Carregando...</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="sync-badge" id="sync-badge">
+      <div class="sync-dot"></div>
+      <span id="sync-text">Aguardando...</span>
+    </div>
+    <button class="btn primary" onclick="loadData()">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/><path d="M13.5 2.5v3h-3" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Atualizar
+    </button>
+    <button class="btn" onclick="window.print()">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M3 2h7l3 3v9H3V2z" stroke="#5A6478" stroke-width="1.3" fill="none" stroke-linejoin="round"/><path d="M10 2v3h3" stroke="#5A6478" stroke-width="1.3" fill="none"/><path d="M5 9h6M5 11.5h4" stroke="#5A6478" stroke-width="1.1" stroke-linecap="round"/></svg>
+      PDF
+    </button>
+  </div>
+</div>
 
-<div id="status">Carregando...</div>
+<div class="page">
 
-<div class="cards" id="cards"></div>
+  <div class="loading" id="loading-state">
+    <div class="spinner"></div>
+    <p id="loading-msg">Buscando dados da planilha...</p>
+  </div>
 
-<canvas id="grafico"></canvas>
+  <div id="error-state" style="display:none">
+    <div class="error-box">
+      <strong>Não foi possível carregar os dados</strong>
+      <span id="error-msg">Verifique se a planilha está publicada e tente novamente.</span>
+    </div>
+    <div style="text-align:center">
+      <button class="btn primary" onclick="loadData()">Tentar novamente</button>
+    </div>
+  </div>
 
-<table>
-<thead>
-<tr>
-<th>Categoria</th>
-<th>Orçado</th>
-<th>Gasto</th>
-<th>Saldo</th>
-</tr>
-</thead>
-<tbody id="tabela"></tbody>
-</table>
+  <div id="main-content">
+
+    <div class="cards" id="cards-wrap"></div>
+    <div class="alerts" id="alerts-wrap"></div>
+
+    <div class="filters-bar">
+      <label>Parcela</label>
+      <select id="sel-parcela" onchange="render()">
+        <option value="-1">Todas (total anual)</option>
+      </select>
+      <div class="filters-divider"></div>
+      <label>Grupo</label>
+      <select id="sel-grupo" onchange="render()">
+        <option value="-1">Todos os grupos</option>
+      </select>
+      <div class="filters-divider"></div>
+      <label>Categoria</label>
+      <select id="sel-cat" onchange="render()">
+        <option value="-1">Todas as categorias</option>
+      </select>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title" id="bar-title">Orçado vs Gasto vs Saldo</div>
+        <div class="legend">
+          <span><i style="background:#B5D4F4"></i>Orçado</span>
+          <span><i style="background:#E8724A"></i>Gasto</span>
+          <span><i style="background:#0B8F64"></i>Saldo</span>
+        </div>
+        <canvas id="barCanvas" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribuição do orçamento total</div>
+        <div id="pie-legend" class="legend"></div>
+        <canvas id="pieCanvas" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card full">
+      <div class="chart-title">Saldo disponível por parcela (evolução)</div>
+      <canvas id="lineCanvas" height="130"></canvas>
+    </div>
+
+    <div class="table-section">
+      <div class="table-header">
+        <h3 id="table-title">Detalhamento por categoria</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th id="th-orc">Orçado</th>
+              <th>Gasto</th>
+              <th>Saldo</th>
+              <th style="width:160px">Execução</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <div class="footer">Atualizado em <span id="hoje"></span> · Controle de Despesas — Termo de Fomento</div>
+</div>
 
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/1RT24LIxWB2eboOWrbagZ1hFvE-N0rDJG535EBiynAcE/export?format=csv&gid=1436090432';
+// ── CONFIG ───────────────────────────────────────────────
+// URL do Google Apps Script (sem CORS, sem proxy)
+const APPS_URL = 'https://script.google.com/macros/s/AKfycbw7bsRGnVhmLl0Xrg96SVbnTIEt0KBG_N-bV5WgvaM_MrqyDyB1Jj3oWog_25_bSqZR/exec';
+// CSV direto como fallback
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
+const CSV_ENC = encodeURIComponent(CSV_URL);
 
-// força atualização automática a cada 60s
-setInterval(loadData, 60000);
+// Paleta de cores por grupo
+const CORES_GRUPO = {
+  'Alimentação':         '#3B8BD4',
+  'Material':            '#1D9E75',
+  'Higiene':             '#BA7517',
+  'Custos Indiretos':    '#D85A30',
+  'Recursos Humanos':    '#7F77DD',
+  'Encargos Sociais':    '#C0392B',
+  'Provisão':            '#16A085',
+  'default':             '#8E9BAE',
+};
 
-function isValidCSV(t){
-  if(!t || t.length < 50) return false;
-  const s = t.toLowerCase();
-  if(s.includes('<html')) return false;
-  if(s.includes('google') && s.includes('drive')) return false;
+// Estrutura de grupos e categorias conforme o Resumo Geral da planilha
+// Cada item: { grupo, nome, rowOrc, rowGas }  (índice de linha no CSV, 0-based)
+// CSV linha 0 = título, linha 1 = cabeçalho, dados a partir de linha 2
+// Mapeamento baseado na estrutura real do Resumo Geral:
+//   L3  Alimentação - PLANO → L4 gasto
+//   L7  Material    - PLANO → L8 gasto
+//   L11 Alim.extra  - PLANO → L12 gasto
+//   L15 Higiene     - PLANO → L16 gasto
+//   L19 Custos ind. - PLANO → L20 gasto
+//   L22 RH          - PLANO → L23 gasto  (L23 ausente no resumo, pular)
+//   L25 = "ENCARGOS SOCIAIS" (seção)
+//   L26 FGTS        - PLANO → L27 gasto
+//   L29 INSS        - PLANO → L30 gasto
+//   L32 IRPF        - PLANO → L33 gasto
+//   L35 Vale Transp - PLANO → L36 gasto
+//   L38 Provisão    - PLANO → L39 gasto
+// (todas 1-indexed no xlsx; no CSV 0-indexed após parse)
+
+const ESTRUTURA = [
+  { grupo:'Alimentação',      nome:'Alimentação',              planoIdx:2,  gastoIdx:3  },
+  { grupo:'Material',         nome:'Material de escritório',   planoIdx:6,  gastoIdx:7  },
+  { grupo:'Alimentação',      nome:'Alimentação ativ. extra',  planoIdx:10, gastoIdx:11 },
+  { grupo:'Higiene',          nome:'Higiene/limpeza e EPI',    planoIdx:14, gastoIdx:15 },
+  { grupo:'Custos Indiretos', nome:'Custos Indiretos',         planoIdx:18, gastoIdx:19 },
+  { grupo:'Recursos Humanos', nome:'Recursos Humanos',         planoIdx:21, gastoIdx:-1 }, // RH não tem linha de gasto no CSV
+  { grupo:'Encargos Sociais', nome:'FGTS',                     planoIdx:25, gastoIdx:26 },
+  { grupo:'Encargos Sociais', nome:'INSS',                     planoIdx:28, gastoIdx:29 },
+  { grupo:'Encargos Sociais', nome:'IRPF',                     planoIdx:31, gastoIdx:32 },
+  { grupo:'Encargos Sociais', nome:'Vale Transporte',          planoIdx:34, gastoIdx:35 },
+  { grupo:'Provisão',         nome:'Provisão',                 planoIdx:37, gastoIdx:38 },
+];
+
+let parcelas = [];
+let dados = [];   // [{ cat, orcado:[p1..p12], gasto:[p1..p12] }]
+let parcelaCols = [];
+
+// ── CSV PARSER ────────────────────────────────────────────
+function parseCSV(text) {
+  return text.trim().split('\n').map(line => {
+    const cols = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+    cols.push(cur.trim()); return cols;
+  });
+}
+
+function parseVal(str) {
+  if (!str) return 0;
+  let s = str.replace(/"/g,'').replace(/R\$\s*/g,'').trim();
+  if (s.includes(',')) s = s.replace(/\./g,'').replace(',','.');
+  const v = parseFloat(s);
+  return isNaN(v) ? 0 : v;
+}
+
+// ── LOAD DATA ─────────────────────────────────────────────
+function isValidCSV(t) {
+  if (!t || t.length < 100) return false;
+  const s = t.trim();
+  if (s.startsWith('<')) return false;
+  if (s.startsWith('{')) return false;
+  if (s.startsWith('[')) return false;
+  if (!s.includes(',')) return false;
+  if (s.split('\n').length < 3) return false;
   return true;
 }
 
-function parseCSV(text){
-  return text.trim().split('\n').map(l => l.split(','));
+function fetchCSV(url, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+    fetch(url, { redirect: 'follow', cache: 'no-store' })
+      .then(r => { clearTimeout(t); return r.ok ? r.arrayBuffer() : Promise.reject('HTTP ' + r.status); })
+      .then(buf => {
+        let text = new TextDecoder('utf-8').decode(buf);
+        if (text.includes('\xc3') || text.includes('Ã')) text = new TextDecoder('latin1').decode(buf);
+        resolve(text);
+      }).catch(e => { clearTimeout(t); reject(e); });
+  });
 }
 
-async function loadData(){
-  try{
-    const res = await fetch(CSV_URL + '&t=' + Date.now());
-    const text = await res.text();
+async function loadData() {
+  show('loading-state');
+  hide('main-content'); hide('error-state');
+  setSyncBadge('loading', 'Sincronizando...');
 
-    if(!isValidCSV(text)) throw new Error();
+  let text = null;
+  let fonteUsada = '';
 
-    const rows = parseCSV(text);
+  // APPS_URL adicionado como primeira fonte (sem CORS, mais confiável)
+  const fontes = [
+    { url: APPS_URL,                                                    label: 'Apps Script'  },
+    { url: CSV_URL + '&t=' + Date.now(),                                label: 'CSV direto'   },
+    { url: `https://corsproxy.io/?${CSV_ENC}`,                          label: 'corsproxy.io' },
+    { url: `https://api.allorigins.win/raw?url=${CSV_ENC}&t=${Date.now()}`, label: 'allorigins' },
+    { url: `https://api.codetabs.com/v1/proxy?quest=${CSV_ENC}`,        label: 'codetabs'    },
+  ];
 
-    document.getElementById('status').innerHTML = '✅ Atualizado em ' + new Date().toLocaleTimeString();
+  const mensagens = [
+    'Conectando ao Google Apps Script...',
+    'Tentando CSV direto do Google Sheets...',
+    'Tentando proxy corsproxy.io...',
+    'Tentando proxy allorigins...',
+    'Última tentativa (codetabs)...',
+  ];
 
-    montarDashboard(rows);
+  for (let idx = 0; idx < fontes.length; idx++) {
+    const fonte = fontes[idx];
+    const msgEl = document.getElementById('loading-msg');
+    if (msgEl) msgEl.textContent = mensagens[idx] || 'Buscando dados...';
+    try {
+      const t = await fetchCSV(fonte.url, 14000);
+      if (isValidCSV(t)) { text = t; fonteUsada = fonte.label; break; }
+    } catch(e) { /* tenta próximo */ }
+  }
 
-  }catch(e){
-    document.getElementById('status').innerHTML = '❌ Erro ao carregar dados';
+  if (!text) {
+    hide('loading-state'); show('error-state');
+    document.getElementById('error-msg').innerHTML =
+      'Não foi possível carregar os dados após tentar todas as fontes disponíveis.<br><br>' +
+      '<strong>Verifique:</strong><br>' +
+      '1. A planilha está publicada na web? (Arquivo → Publicar na web → CSV → Publicar)<br>' +
+      '2. O link do Google Apps Script está ativo e implantado como "Qualquer pessoa"?<br>' +
+      '3. Você está com conexão à internet?';
+    setSyncBadge('err', 'Falha na sincronização');
+    return;
+  }
+
+  console.log('[Dashboard] Dados carregados via:', fonteUsada);
+
+  try {
+    processCSV(text);
+    hide('loading-state'); hide('error-state'); show('main-content');
+    const now = new Date();
+    document.getElementById('hoje').textContent = now.toLocaleString('pt-BR');
+    setSyncBadge('ok', 'Sincronizado às ' + now.toLocaleTimeString('pt-BR'));
+    render();
+  } catch(e) {
+    hide('loading-state'); show('error-state');
+    document.getElementById('error-msg').textContent = 'Erro ao processar dados: ' + e.message;
+    setSyncBadge('err', 'Erro nos dados');
   }
 }
 
-function montarDashboard(rows){
+function processCSV(text) {
+  const rows = parseCSV(text);
 
-  let dados = rows.slice(2,12);
-
-  let totalOrc = 0;
-  let totalGas = 0;
-
-  let labels = [];
-  let valores = [];
-
-  let tabelaHTML = '';
-
-  dados.forEach(r=>{
-    let nome = r[0];
-    let orc = parseFloat(r[2]) || 0;
-    let gas = parseFloat(r[3]) || 0;
-    let sal = orc - gas;
-
-    totalOrc += orc;
-    totalGas += gas;
-
-    labels.push(nome);
-    valores.push(gas);
-
-    tabelaHTML += `
-      <tr>
-        <td>${nome}</td>
-        <td>R$ ${orc.toFixed(2)}</td>
-        <td>R$ ${gas.toFixed(2)}</td>
-        <td>R$ ${sal.toFixed(2)}</td>
-      </tr>
-    `;
+  // Cabeçalho está na linha 2 da planilha = índice 1 do array
+  let headerIdx = 1;
+  rows.forEach((row, i) => {
+    if (row.some(h => h && h.match(/parcela\s*\d+/i))) headerIdx = i;
   });
 
-  document.getElementById('tabela').innerHTML = tabelaHTML;
+  const header = rows[headerIdx] || [];
+  parcelas = []; parcelaCols = [];
+  header.forEach((h, i) => {
+    if (h && h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
+  });
 
-  document.getElementById('cards').innerHTML = `
-    <div class="card"><h3>Orçado</h3><p>R$ ${totalOrc.toFixed(2)}</p></div>
-    <div class="card"><h3>Gasto</h3><p>R$ ${totalGas.toFixed(2)}</p></div>
-    <div class="card"><h3>Saldo</h3><p>R$ ${(totalOrc-totalGas).toFixed(2)}</p></div>
-    <div class="card"><h3>Execução</h3><p>${((totalGas/totalOrc)*100 || 0).toFixed(1)}%</p></div>
-  `;
+  // Índices da ESTRUTURA são 0-based (linha 1 da planilha = índice 0 do array rows)
+  // A planilha começa: linha1=título, linha2=cabeçalho, linha3=dados
+  // rows[0]=título, rows[1]=cabeçalho, rows[2]=primeira linha de dados
+  dados = ESTRUTURA.map(e => ({
+    grupo: e.grupo,
+    nome: e.nome,
+    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx] || [])[ci])),
+    gasto:  e.gastoIdx === -1
+      ? parcelaCols.map(() => 0)
+      : parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
+  }));
 
-  if(window.grafico) window.grafico.destroy();
+  // Selects
+  const selP = document.getElementById('sel-parcela');
+  selP.innerHTML = '<option value="-1">Todas (total anual)</option>';
+  parcelas.forEach((p, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = p; selP.appendChild(o);
+  });
 
-  window.grafico = new Chart(document.getElementById('grafico'),{
-    type:'bar',
-    data:{
-      labels:labels,
-      datasets:[{
-        label:'Gastos',
-        data:valores
-      }]
-    }
+  const grupos = [...new Set(ESTRUTURA.map(e => e.grupo))];
+  const selG = document.getElementById('sel-grupo');
+  selG.innerHTML = '<option value="-1">Todos os grupos</option>';
+  grupos.forEach((g, i) => {
+    const o = document.createElement('option');
+    o.value = g; o.textContent = g; selG.appendChild(o);
+  });
+
+  const selC = document.getElementById('sel-cat');
+  selC.innerHTML = '<option value="-1">Todas as categorias</option>';
+  dados.forEach((d, i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = d.nome; selC.appendChild(o);
   });
 }
 
+// ── HELPERS ───────────────────────────────────────────────
+function fmt(v) { return 'R$\u00a0' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pct(g, o) { return o > 0 ? Math.min(Math.round(g/o*100), 999) : 0; }
+function sumD(d, pi) {
+  if (pi === -1) return { orc: d.orcado.reduce((a,b)=>a+b,0), gas: d.gasto.reduce((a,b)=>a+b,0) };
+  return { orc: d.orcado[pi]||0, gas: d.gasto[pi]||0 };
+}
+function corGrupo(g) { return CORES_GRUPO[g] || CORES_GRUPO.default; }
+function show(id) { document.getElementById(id).style.display = ''; }
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+function setSyncBadge(state, text) {
+  const b = document.getElementById('sync-badge');
+  b.className = 'sync-badge' + (state === 'ok' ? ' ok' : state === 'err' ? ' err' : '');
+  document.getElementById('sync-text').textContent = text;
+}
+
+// ── RENDER ────────────────────────────────────────────────
+function render() {
+  if (!dados.length) return;
+  const pi   = parseInt(document.getElementById('sel-parcela').value);
+  const grpV = document.getElementById('sel-grupo').value;
+  const ci   = parseInt(document.getElementById('sel-cat').value);
+
+  let filtrado = dados;
+  if (grpV !== '-1') filtrado = filtrado.filter(d => d.grupo === grpV);
+  if (ci   !== -1)   filtrado = filtrado.filter((d,i) => dados.indexOf(d) === ci);
+
+  const parLabel = pi === -1 ? 'Todas as parcelas' : parcelas[pi];
+  document.getElementById('sub-title').textContent = `Termo de Fomento · ${parLabel}`;
+  document.getElementById('table-title').textContent = pi === -1
+    ? 'Detalhamento por categoria — Total anual (12 parcelas)'
+    : `Detalhamento por categoria — ${parcelas[pi]}`;
+  document.getElementById('th-orc').textContent = pi === -1 ? 'Orçado (anual)' : 'Orçado (parcela)';
+
+  const totalOrc = filtrado.reduce((s,d) => s + sumD(d,pi).orc, 0);
+  const totalGas = filtrado.reduce((s,d) => s + sumD(d,pi).gas, 0);
+  const totalSal = totalOrc - totalGas;
+  const ex = pct(totalGas, totalOrc);
+
+  // Cards
+  document.getElementById('cards-wrap').innerHTML = `
+    <div class="card">
+      <div class="card-lbl">💰 Orçamento total</div>
+      <div class="card-val">${fmt(totalOrc)}</div>
+      <div class="card-sub">${pi===-1?'12 parcelas':parcelas[pi]}</div>
+    </div>
+    <div class="card ${ex>80?'amber':''}">
+      <div class="card-lbl">📤 Total gasto</div>
+      <div class="card-val">${fmt(totalGas)}</div>
+      <div class="card-sub">${ex}% executado</div>
+    </div>
+    <div class="card green">
+      <div class="card-lbl">✅ Saldo disponível</div>
+      <div class="card-val">${fmt(totalSal)}</div>
+      <div class="card-sub">Restante</div>
+    </div>
+    <div class="card ${ex===0?'':ex>90?'red':'amber'}">
+      <div class="card-lbl">📊 Execução</div>
+      <div class="card-val">${ex}%</div>
+      <div class="card-sub">${ex===0?'Não iniciado':ex>90?'Crítico':ex>60?'Em andamento':'Normal'}</div>
+    </div>`;
+
+  // Alertas
+  const aw = document.getElementById('alerts-wrap');
+  aw.innerHTML = '';
+  let alertas = [];
+  filtrado.forEach(d => {
+    const {orc, gas} = sumD(d, pi);
+    const p = pct(gas, orc);
+    if (p >= 90 && orc > 0) alertas.push({type:'warn', title:`⚠ ${d.nome} — Orçamento crítico`, msg:`${p}% utilizado. Saldo restante: ${fmt(orc-gas)}.`});
+    else if (gas === 0 && orc > 0) alertas.push({type:'info', title:`${d.nome} — Sem gastos`, msg:`Orçado: ${fmt(orc)}. Nenhum lançamento registrado.`});
+  });
+  if (!alertas.length) alertas.push({type:'ok', title:'Orçamento sob controle', msg:'Nenhum alerta identificado para a seleção atual.'});
+  alertas.slice(0,4).forEach(a => {
+    const icon = a.type==='warn'?'!':a.type==='ok'?'✓':'i';
+    aw.innerHTML += `<div class="alert ${a.type}"><div class="alert-icon">${icon}</div><div><strong>${a.title}</strong>${a.msg}</div></div>`;
+  });
+
+  // Tabela com agrupamento por seção
+  const tb = document.getElementById('tbody');
+  tb.innerHTML = '';
+  let lastGrupo = null;
+  filtrado.forEach(d => {
+    const {orc, gas} = sumD(d, pi);
+    const sal = orc - gas;
+    const p = pct(gas, orc);
+    const st = gas===0?'zero':p>=90?'danger':p>60?'warn':'ok';
+    const stL = gas===0?'Sem gastos':p>=90?'Crítico':p>60?'Atenção':'Normal';
+    const pbC = p>=90?'danger':p>60?'warn':'';
+    const salC = sal < 0 ? 'var(--red)' : 'var(--green)';
+    const gasC = gas===0?'var(--text3)':p>=90?'var(--red)':p>60?'var(--amber)':'var(--text)';
+    const isSub = d.grupo === 'Encargos Sociais';
+
+    // Cabeçalho de grupo
+    if (d.grupo !== lastGrupo) {
+      lastGrupo = d.grupo;
+      const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${corGrupo(d.grupo)};margin-right:6px"></span>`;
+      tb.innerHTML += `<tr class="section-row"><td colspan="6">${dot}${d.grupo}</td></tr>`;
+    }
+
+    tb.innerHTML += `<tr class="${isSub?'sub-row':''}">
+      <td><span style="font-weight:${isSub?'400':'600'}">${d.nome}</span></td>
+      <td class="mono">${fmt(orc)}</td>
+      <td class="mono" style="color:${gasC};font-weight:500">${fmt(gas)}</td>
+      <td class="mono" style="color:${salC};font-weight:500">${fmt(sal)}</td>
+      <td>
+        <div class="pb-wrap">
+          <div class="pb-outer"><div class="pb-inner ${pbC}" style="width:${Math.min(p,100)}%"></div></div>
+          <span class="pct-lbl" style="color:${p>=90?'var(--red)':p>60?'var(--amber)':'var(--green)'}">${p}%</span>
+        </div>
+      </td>
+      <td><span class="pill ${st}">${stL}</span></td>
+    </tr>`;
+  });
+
+  // Bar chart
+  const labels = filtrado.map(d => d.nome.length > 12 ? d.nome.substring(0,11)+'…' : d.nome);
+  const orcados = filtrado.map(d => sumD(d,pi).orc);
+  const gastos  = filtrado.map(d => sumD(d,pi).gas);
+  const saldos  = filtrado.map(d => { const {orc,gas}=sumD(d,pi); return orc-gas; });
+  const maxVal  = Math.max(...orcados, ...gastos, ...saldos) * 1.12 || 1;
+  drawBar('barCanvas', labels,
+    [{color:'#B5D4F4',data:orcados},{color:'#E8724A',data:gastos},{color:'#0B8F64',data:saldos}],
+    maxVal);
+  document.getElementById('bar-title').textContent = 'Orçado vs Gasto vs Saldo' + (pi!==-1?' — '+parcelas[pi]:'');
+
+  // Pie (por grupo, todos os dados)
+  const grupos = [...new Set(dados.map(d=>d.grupo))];
+  const totaisPie = grupos.map(g => dados.filter(d=>d.grupo===g).reduce((s,d)=>s+sumD(d,-1).orc,0));
+  const coresPie  = grupos.map(g => corGrupo(g));
+  const pl = document.getElementById('pie-legend');
+  pl.innerHTML = '';
+  const totalPie = totaisPie.reduce((a,b)=>a+b,0);
+  grupos.forEach((g,i) => {
+    pl.innerHTML += `<span><i style="background:${coresPie[i]}"></i>${g.split(' ')[0]} ${Math.round(totaisPie[i]/totalPie*100)}%</span>`;
+  });
+  drawPie('pieCanvas', grupos, totaisPie, coresPie);
+
+  // Line (saldo por parcela para filtrado)
+  const lineSaldos = Array.from({length: parcelas.length}, (_,pIdx) =>
+    filtrado.reduce((s,d) => s + (d.orcado[pIdx]||0) - (d.gasto[pIdx]||0), 0));
+  drawLine('lineCanvas', parcelas.map((_,i) => `P${i+1}`), lineSaldos);
+}
+
+// ── CANVAS HELPERS ────────────────────────────────────────
+function clearCanvas(id) {
+  const c = document.getElementById(id);
+  c.width = c.offsetWidth || c.parentElement.clientWidth || 500;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0,0,c.width,c.height);
+  return {ctx, W:c.width, H:c.height};
+}
+
+function drawBar(id, labels, datasets, maxVal) {
+  const {ctx,W,H} = clearCanvas(id);
+  const pad = {top:10,right:10,bottom:42,left:72};
+  const cW = W-pad.left-pad.right, cH = H-pad.top-pad.bottom;
+  const n = labels.length, ds = datasets.length;
+  const groupW = cW/n, barW = Math.min(groupW/(ds+1), 26), gap = 2;
+  const scale = cH/maxVal;
+
+  ctx.strokeStyle='#E8EBF0'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) {
+    const y = pad.top + cH - i*cH/4;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const val = maxVal*i/4;
+    ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
+    ctx.fillText(val>=1000?'R$'+(val/1000).toFixed(0)+'k':'R$'+val.toFixed(0), pad.left-4, y+3);
+  }
+
+  datasets.forEach((ds2, di) => {
+    ctx.fillStyle = ds2.color;
+    ds2.data.forEach((val,i) => {
+      const x = pad.left + (i+0.5)*groupW - (ds*barW+(ds-1)*gap)/2 + di*(barW+gap);
+      const h = val*scale, y = pad.top+cH-h;
+      ctx.beginPath();
+      const r = Math.min(3,h/2);
+      ctx.moveTo(x+r,y); ctx.lineTo(x+barW-r,y);
+      ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+      ctx.lineTo(x+barW,y+h); ctx.lineTo(x,y+h); ctx.lineTo(x,y+r);
+      ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath(); ctx.fill();
+    });
+  });
+
+  ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  labels.forEach((lbl,i) => {
+    const x = pad.left + (i+0.5)*groupW;
+    ctx.fillText(lbl, x, H-pad.bottom+16);
+  });
+}
+
+function drawPie(id, labels, values, colors) {
+  const {ctx,W,H} = clearCanvas(id);
+  const cx=W/2, cy=H/2, r=Math.min(cx,cy)-16, inner=r*0.62;
+  const total = values.reduce((a,b)=>a+b,0);
+  let angle = -Math.PI/2;
+  values.forEach((v,i) => {
+    const sweep = 2*Math.PI*v/total;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,angle,angle+sweep);
+    ctx.closePath(); ctx.fillStyle=colors[i]; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    angle += sweep;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,inner,0,2*Math.PI); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.fillStyle='#0D1117'; ctx.font='bold 12px DM Mono,monospace'; ctx.textAlign='center';
+  ctx.fillText(fmt(total).replace('R$\u00a0','R$ '), cx, cy);
+  ctx.fillStyle='#9CA3AF'; ctx.font='10px DM Sans,sans-serif';
+  ctx.fillText('Total orçado', cx, cy+15);
+}
+
+function drawLine(id, labels, values) {
+  const {ctx,W,H} = clearCanvas(id);
+  const pad = {top:10,right:16,bottom:30,left:72};
+  const cW=W-pad.left-pad.right, cH=H-pad.top-pad.bottom;
+  const maxV = Math.max(...values)*1.1||1, minV=Math.min(...values)*0.9, range=maxV-minV||1;
+  const toX = i => pad.left + i*(cW/(labels.length-1||1));
+  const toY = v => pad.top + cH - (v-minV)/range*cH;
+
+  ctx.strokeStyle='#E8EBF0'; ctx.lineWidth=0.5;
+  for (let i=0;i<=4;i++) {
+    const y = pad.top + i*cH/4;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(W-pad.right,y); ctx.stroke();
+    const val = maxV-(maxV-minV)*i/4;
+    ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='right';
+    ctx.fillText('R$'+(val/1000).toFixed(0)+'k', pad.left-4, y+3);
+  }
+
+  // Fill
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((_,i) => { if(i>0) ctx.lineTo(toX(i),toY(values[i])); });
+  ctx.lineTo(toX(values.length-1), pad.top+cH); ctx.lineTo(pad.left, pad.top+cH);
+  ctx.closePath(); ctx.fillStyle='rgba(11,143,100,.08)'; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.moveTo(toX(0), toY(values[0]));
+  values.forEach((_,i) => { if(i>0) ctx.lineTo(toX(i),toY(values[i])); });
+  ctx.strokeStyle='#0B8F64'; ctx.lineWidth=2; ctx.stroke();
+
+  // Dots
+  values.forEach((v,i) => {
+    ctx.beginPath(); ctx.arc(toX(i), toY(v), 3, 0, 2*Math.PI);
+    ctx.fillStyle='#0B8F64'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke();
+  });
+
+  ctx.fillStyle='#9CA3AF'; ctx.font='9px DM Sans,sans-serif'; ctx.textAlign='center';
+  labels.forEach((lbl,i) => ctx.fillText(lbl, toX(i), H-pad.bottom+14));
+}
+
+// Redraw on resize
+let _rt;
+window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(render, 150); });
+
+// Init
 loadData();
 </script>
-
 </body>
 </html>
+
+# 📊 Controle de Despesas — Termo de Fomento
+
+Dashboard web para acompanhamento de despesas do Termo de Fomento, com gráficos e tabela de execução orçamentária por categoria e parcela.
+
+## ✨ Funcionalidades
+
+- Cards de resumo: orçamento total, total gasto, saldo disponível e % de execução
+- Gráficos de barras (Orçado vs Gasto vs Saldo), pizza (distribuição por grupo) e linha (evolução do saldo por parcela)
+- Tabela detalhada com agrupamento por seção, barra de progresso e status por categoria
+- Filtros por parcela, grupo e categoria
+- Alertas automáticos de orçamento crítico ou sem lançamentos
+- Exportação para PDF via impressão do navegador
+- Busca de dados em múltiplas fontes (Google Apps Script → CSV direto → proxies CORS)
+
+## 🚀 Publicar no GitHub Pages
+
+1. Faça fork ou clone este repositório
+2. Vá em **Settings → Pages**
+3. Em **Source**, selecione a branch `main` e pasta `/ (root)`
+4. Clique em **Save**
+5. Acesse o dashboard em `https://<seu-usuario>.github.io/<nome-do-repo>/`
+
+## ⚙️ Configuração dos dados
+
+No arquivo `index.html`, edite as constantes no início do `<script>`:
+
+```js
+// URL do Google Apps Script (principal)
+const APPS_URL = 'https://script.google.com/macros/s/SEU_ID_AQUI/exec';
+
+// URL do CSV publicado como fallback
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/SEU_ID_AQUI/pub?gid=SEU_GID&single=true&output=csv';
+```
+
+### Pré-requisitos na planilha
+
+- A aba **Resumo Geral** deve estar publicada na web como CSV
+  (Arquivo → Publicar na web → selecione a aba → CSV → Publicar)
+- O Google Apps Script (opcional, elimina problemas de CORS) deve estar implantado como **"Qualquer pessoa"**
+
+## 🗂️ Estrutura esperada da planilha
+
+O dashboard lê linhas específicas da aba Resumo Geral conforme mapeado em `ESTRUTURA` no código. Caso a estrutura da sua planilha seja diferente, ajuste os índices `planoIdx` e `gastoIdx` de cada categoria.
+
+## 📄 Tecnologias
+
+- HTML5 + CSS3 + JavaScript puro (sem dependências externas)
+- Canvas API para os gráficos
+- Google Fonts (DM Sans + DM Mono)
