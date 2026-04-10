@@ -523,7 +523,7 @@ function render() {
       <div class="card-val">${fmt(totalSal)}</div>
       <div class="card-sub">Restante</div>
     </div>
-    <div class="card ${ex===0?'':'ex>90?red':'amber'}">
+    <div class="card ${ex===0?'':ex>90?'red':'amber'}">
       <div class="card-lbl">📊 Execução</div>
       <div class="card-val">${ex}%</div>
       <div class="card-sub">${ex===0?'Não iniciado':ex>90?'Crítico':ex>60?'Em andamento':'Normal'}</div>
