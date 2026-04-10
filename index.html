@@ -20,14 +20,17 @@ h1 { margin-bottom:20px; }
   border-radius:8px;
   box-shadow:0 2px 6px rgba(0,0,0,0.1);
 }
+.erro {
+  color:red;
+  font-weight:bold;
+}
 </style>
 </head>
 
 <body>
 
 <h1>Controle de Despesas</h1>
-
-<div id="app"></div>
+<div id="app">Carregando dados...</div>
 
 <script>
 // ================= CONFIG =================
@@ -76,8 +79,26 @@ function detectarGrupo(cat){
   return 'Outros';
 }
 
-function parseCSV(text){
-  return text.split('\n').map(l=>l.split(','));
+// ================= CSV CORRETO =================
+function parseCSV(text) {
+  return text.split('\n').map(line => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let char of line) {
+      if (char === '"') inQuotes = !inQuotes;
+      else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current);
+    return result;
+  });
 }
 
 function parseVal(v){
@@ -85,7 +106,7 @@ function parseVal(v){
   return parseFloat(
     v.replace(/R\$/g,'')
      .replace(/\./g,'')
-     .replace(',','.')
+     .replace(',', '.')
   )||0;
 }
 
@@ -127,6 +148,7 @@ function processCSV(text){
 
     parcelaCols.forEach((ci,idx)=>{
       const val = parseVal(row[ci]);
+
       if(tipo==='orcado') mapa[categoria].orcado[idx]=val;
       if(tipo==='gasto') mapa[categoria].gasto[idx]=val;
     });
@@ -139,6 +161,11 @@ function processCSV(text){
 function render(){
   const app = document.getElementById('app');
   app.innerHTML = '';
+
+  if(!dados.length){
+    app.innerHTML = '<p class="erro">Nenhum dado encontrado</p>';
+    return;
+  }
 
   dados.forEach(d=>{
     const totalOrc = d.orcado.reduce((a,b)=>a+b,0);
@@ -158,12 +185,32 @@ function render(){
 
 // ================= LOAD =================
 async function loadData(){
-  const res = await fetch(CSV_URL);
-  const text = await res.text();
-  processCSV(text);
-  render();
+  try{
+    const res = await fetch(CSV_URL);
+
+    if(!res.ok){
+      throw new Error("Erro ao acessar planilha");
+    }
+
+    const text = await res.text();
+
+    if(!text || text.length < 50){
+      throw new Error("CSV vazio ou inválido");
+    }
+
+    processCSV(text);
+    render();
+
+  }catch(e){
+    document.getElementById('app').innerHTML = `
+      <p class="erro">Erro ao carregar dados</p>
+      <p>${e.message}</p>
+    `;
+    console.error(e);
+  }
 }
 
+// INIT
 loadData();
 </script>
 
