@@ -430,17 +430,27 @@ async function loadData() {
 
 function processCSV(text) {
   const rows = parseCSV(text);
-  const header = rows[1] || [];
+
+  // Encontra a linha do cabeçalho procurando por "Parcela" em qualquer linha
+  let headerIdx = -1;
+  rows.forEach((row, i) => {
+    if (row.some(h => h && h.match(/parcela\s*\d+/i))) headerIdx = i;
+  });
+  if (headerIdx === -1) headerIdx = 1; // fallback linha 1
+
+  const header = rows[headerIdx] || [];
   parcelas = []; parcelaCols = [];
   header.forEach((h, i) => {
-    if (h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
+    if (h && h.match(/parcela\s*\d+/i)) { parcelas.push(h.trim()); parcelaCols.push(i); }
   });
 
+  // Ajusta índices da ESTRUTURA relativo ao headerIdx
+  const offset = headerIdx - 1; // linha 1 no xlsx = linha headerIdx no CSV
   dados = ESTRUTURA.map(e => ({
     grupo: e.grupo,
     nome: e.nome,
-    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx] || [])[ci])),
-    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx]  || [])[ci])),
+    orcado: parcelaCols.map(ci => parseVal((rows[e.planoIdx + offset] || [])[ci])),
+    gasto:  parcelaCols.map(ci => parseVal((rows[e.gastoIdx  + offset] || [])[ci])),
   }));
 
   // Selects
