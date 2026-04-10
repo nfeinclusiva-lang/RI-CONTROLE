@@ -5,79 +5,180 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Controle de Despesas</title>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
-body { font-family: Arial; background:#f5f5f5; padding:20px; }
-.card { background:#fff; padding:20px; border-radius:10px; margin-bottom:10px; }
+body {
+  font-family: Arial;
+  background:#f4f6f9;
+  margin:0;
+  padding:20px;
+}
+
+h1 {
+  margin-bottom:20px;
+}
+
+.cards {
+  display:grid;
+  grid-template-columns: repeat(4,1fr);
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.card {
+  background:#fff;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.08);
+}
+
+.card h3 {
+  margin:0;
+  font-size:14px;
+  color:#666;
+}
+
+.card p {
+  font-size:18px;
+  font-weight:bold;
+}
+
+canvas {
+  background:#fff;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:20px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+
+th, td {
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+
+th {
+  background:#fafafa;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Controle de Despesas</h2>
+<h1>📊 Controle de Despesas</h1>
+
 <div id="status">Carregando...</div>
-<div id="dados"></div>
+
+<div class="cards" id="cards"></div>
+
+<canvas id="grafico"></canvas>
+
+<table>
+<thead>
+<tr>
+<th>Categoria</th>
+<th>Orçado</th>
+<th>Gasto</th>
+<th>Saldo</th>
+</tr>
+</thead>
+<tbody id="tabela"></tbody>
+</table>
 
 <script>
-// ✅ CONFIG FINAL CORRIGIDA
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/1RT24LIxWB2eboOWrbagZ1hFvE-N0rDJG535EBiynAcE/export?format=csv&gid=1436090432';
 
-// ✅ VALIDAÇÃO ANTI ERRO GOOGLE
-function isValidCSV(t) {
-  if (!t || t.length < 50) return false;
-
+function isValidCSV(t){
+  if(!t || t.length < 50) return false;
   const s = t.toLowerCase();
-
-  if (s.includes('<html')) return false;
-  if (s.includes('google') && s.includes('drive')) return false;
-
-  if (!s.includes(',')) return false;
-  if (s.split('\n').length < 3) return false;
-
+  if(s.includes('<html')) return false;
+  if(s.includes('google') && s.includes('drive')) return false;
   return true;
 }
 
-// ✅ PARSER CSV
-function parseCSV(text) {
-  return text.trim().split('\n').map(l => l.split(','));
+function parseCSV(text){
+  return text.trim().split('\n').map(l=>l.split(','));
 }
 
-// ✅ LOAD PRINCIPAL
-async function loadData() {
-  try {
+async function loadData(){
+  try{
     const res = await fetch(CSV_URL + '&t=' + Date.now());
-
-    if (!res.ok) throw new Error('Erro ao buscar');
-
     const text = await res.text();
 
-    if (!isValidCSV(text)) {
-      throw new Error('Resposta inválida');
-    }
+    if(!isValidCSV(text)) throw new Error('Erro CSV');
 
     const rows = parseCSV(text);
 
-    document.getElementById('status').innerHTML = '✅ Dados carregados';
+    document.getElementById('status').innerHTML = '✅ Atualizado';
 
-    render(rows);
+    montarDashboard(rows);
 
-  } catch (e) {
-    document.getElementById('status').innerHTML =
-      '❌ Erro: ' + e.message;
+  }catch(e){
+    document.getElementById('status').innerHTML = '❌ Erro ao carregar';
   }
 }
 
-// ✅ RENDER SIMPLES (FUNCIONANDO)
-function render(rows) {
-  let html = '';
+function montarDashboard(rows){
 
-  rows.slice(0, 15).forEach((r, i) => {
-    html += `<div class="card">${r.join(' | ')}</div>`;
+  let dados = rows.slice(2,12); // ajuste simples
+
+  let totalOrc = 0;
+  let totalGas = 0;
+
+  let labels = [];
+  let valores = [];
+
+  let tabelaHTML = '';
+
+  dados.forEach(r=>{
+    let nome = r[0];
+    let orc = Number(r[2]) || 0;
+    let gas = Number(r[3]) || 0;
+    let sal = orc - gas;
+
+    totalOrc += orc;
+    totalGas += gas;
+
+    labels.push(nome);
+    valores.push(gas);
+
+    tabelaHTML += `
+      <tr>
+        <td>${nome}</td>
+        <td>R$ ${orc.toFixed(2)}</td>
+        <td>R$ ${gas.toFixed(2)}</td>
+        <td>R$ ${sal.toFixed(2)}</td>
+      </tr>
+    `;
   });
 
-  document.getElementById('dados').innerHTML = html;
+  document.getElementById('tabela').innerHTML = tabelaHTML;
+
+  document.getElementById('cards').innerHTML = `
+    <div class="card"><h3>Orçado</h3><p>R$ ${totalOrc.toFixed(2)}</p></div>
+    <div class="card"><h3>Gasto</h3><p>R$ ${totalGas.toFixed(2)}</p></div>
+    <div class="card"><h3>Saldo</h3><p>R$ ${(totalOrc-totalGas).toFixed(2)}</p></div>
+    <div class="card"><h3>Execução</h3><p>${((totalGas/totalOrc)*100).toFixed(1)}%</p></div>
+  `;
+
+  new Chart(document.getElementById('grafico'),{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[{
+        label:'Gastos',
+        data:valores
+      }]
+    }
+  });
 }
 
-// INIT
 loadData();
 </script>
 
