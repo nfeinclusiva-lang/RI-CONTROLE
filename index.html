@@ -10,32 +10,35 @@
 body{background:#f1f3f8;font-family:Arial,sans-serif;padding:20px;}
 .db{background:#f8f9fb;border-radius:12px;padding:16px;}
 .tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;}
-.tab{padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;background:#e5e7eb;color:#6b7280;border:none;font-weight:500;}
+.tab{padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;background:#e5e7eb;color:#6b7280;border:none;font-weight:500;transition:all .15s;}
 .tab.active{background:#2563eb;color:#fff;}
 .tab.home{background:#374151;color:#fff;}
+.tab:hover{opacity:.85;}
 .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
 .mcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;}
-.mlabel{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;}
+.mlabel{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
 .mval{font-size:20px;font-weight:700;color:#111827;}
 .mval.green{color:#059669;}
 .mval.red{color:#dc2626;}
 .msub{font-size:10px;color:#9ca3af;margin-top:3px;}
-.charts-row{display:grid;grid-template-columns:1.4fr 1fr;gap:10px;margin-bottom:14px;}
+.charts-row{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;margin-bottom:14px;}
 .ccard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;}
-.ctitle{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;font-weight:600;}
+.ctitle{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;font-weight:600;}
 .leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
 .leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:#6b7280;}
 .leg-sq{width:9px;height:9px;border-radius:2px;display:inline-block;}
 .tcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px;}
 .ttitle{font-size:11px;font-weight:700;color:#374151;margin-bottom:12px;}
 table{width:100%;border-collapse:collapse;font-size:12px;}
-th{text-align:left;color:#9ca3af;font-weight:600;font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid #f3f4f6;}
+th{text-align:left;color:#9ca3af;font-weight:600;font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:2px solid #f3f4f6;}
 td{padding:8px;color:#374151;border-bottom:1px solid #f9fafb;}
-.tag-green{background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;}
-.tag-red{background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;}
-.tag-blue{background:#dbeafe;color:#1e40af;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;}
-.prog-bg{background:#f3f4f6;border-radius:4px;height:6px;overflow:hidden;min-width:80px;}
-.prog-bar{height:6px;border-radius:4px;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#fafafa;}
+.tag-green{background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.tag-red{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.tag-blue{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.prog-bg{background:#f3f4f6;border-radius:4px;height:7px;overflow:hidden;min-width:90px;}
+.prog-bar{height:7px;border-radius:4px;transition:width .4s;}
 .fcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px;}
 .frow{display:grid;grid-template-columns:130px 1fr 1fr 100px;gap:8px;align-items:end;}
 .flabel{font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;}
@@ -49,10 +52,20 @@ input:focus,select:focus{border-color:#2563eb;background:#fff;}
 .donut-legend-item{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#6b7280;padding:3px 0;}
 .donut-legend-item span:first-child{display:flex;align-items:center;gap:6px;}
 .donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-.erro-box{background:#fff3f3;border:1px solid #fecaca;border-radius:10px;padding:20px;color:#7f1d1d;font-size:13px;line-height:1.8;}
-.erro-box strong{display:block;margin-bottom:8px;font-size:15px;}
-.erro-box code{background:#fee2e2;padding:2px 6px;border-radius:4px;font-size:12px;}
-@media(max-width:600px){
+.cat-name{font-weight:600;color:#1f2937;}
+.pct-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:12px;}
+.pct-low{background:#d1fae5;color:#065f46;}
+.pct-mid{background:#fef3c7;color:#92400e;}
+.pct-high{background:#fee2e2;color:#991b1b;}
+/* Loading */
+#loadingOverlay{position:fixed;inset:0;background:#f1f3f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
+.spinner{width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+#loadMsg{font-size:13px;color:#6b7280;}
+#errorBox{background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;display:none;}
+.btn-reload{background:#374151;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;margin-left:10px;}
+.btn-reload:hover{background:#1f2937;}
+@media(max-width:700px){
   .metrics{grid-template-columns:1fr;}
   .charts-row{grid-template-columns:1fr;}
   .frow{grid-template-columns:1fr 1fr;}
@@ -60,164 +73,267 @@ input:focus,select:focus{border-color:#2563eb;background:#fff;}
 </style>
 </head>
 <body>
-<div class="db">
+
+<!-- Overlay de carregamento -->
+<div id="loadingOverlay">
+  <div class="spinner"></div>
+  <div id="loadMsg">Carregando dados da planilha…</div>
+</div>
+
+<div class="db" id="appRoot" style="display:none">
+  <div id="errorBox"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <span id="lastUpdate" style="font-size:10px;color:#9ca3af;"></span>
+    <button class="btn-reload" onclick="loadCSV()">↺ Atualizar dados</button>
+  </div>
   <div class="tab-bar" id="tabBar"></div>
-  <div id="dashContent"><div style="color:#9ca3af;padding:40px;text-align:center;font-size:14px;">Carregando dados...</div></div>
+  <div id="dashContent"></div>
 </div>
 
 <script>
-const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv';
+// ── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?output=csv';
 
-const PROXIES = [
-  url => url,
-  url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
-];
+// Proxy para contornar CORS (o Google Sheets pub CSV já permite CORS, mas usamos fallback)
+const PROXY = 'https://corsproxy.io/?';
 
-const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16'];
-let allData = {parcelas:[], categorias:[], lancamentos:[]};
-let currentParcela = 0;
+const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#a855f7'];
+
+let RAW = [];
+let PARCELAS = [];
+let currentParcela = -1;
 let barChart = null, donutChart = null;
+let lancamentos = [], lancId = 0;
 
-function parseCSV(text){
-  const rows=[];let cur='',inQ=false,row=[];
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    if(c==='"'){inQ=!inQ;}
-    else if(c===','&&!inQ){row.push(cur.trim());cur='';}
-    else if(c==='\n'&&!inQ){row.push(cur.trim());rows.push(row);row=[];cur='';}
-    else if(c!=='\r'){cur+=c;}
+// ── CSV PARSER ────────────────────────────────────────────────────────────────
+/**
+ * Converte texto CSV em array de objetos { nome, orcado:[], gasto:[] }
+ *
+ * Formato esperado na planilha (colunas):
+ * Col 0      : Nome da categoria
+ * Col 1–12   : Orçado P01…P12
+ * Col 13–24  : Gasto  P01…P12
+ *
+ * A primeira linha pode ser cabeçalho (será ignorada se não for numérica).
+ */
+function parseCSV(text) {
+  // Normaliza quebras de linha e divide em linhas
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim()!=='');
+
+  const result = [];
+  let parcCount = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if (!cols || cols.length < 3) continue;
+
+    const nome = cols[0].trim().replace(/^"|"$/g,'');
+    if (!nome) continue;
+
+    // Tenta detectar linha de cabeçalho
+    const secondCol = cols[1] ? cols[1].trim().replace(/^"|"$/g,'') : '';
+    if (i === 0 && isNaN(parseNumBR(secondCol)) && parseNumBR(secondCol) !== 0) {
+      // É cabeçalho — tenta detectar quantas parcelas tem
+      // (conta colunas numéricas a partir da col 1)
+      let cnt = 0;
+      for (let c = 1; c < cols.length; c++) {
+        const v = cols[c].trim().replace(/^"|"$/g,'');
+        if (v === '' || isNaN(parseNumBR(v))) break;
+        cnt++;
+      }
+      // Se linha de cabeçalho, pula
+      continue;
+    }
+
+    // Lê todos os números da linha (exceto col 0)
+    const nums = [];
+    for (let c = 1; c < cols.length; c++) {
+      const v = cols[c].trim().replace(/^"|"$/g,'');
+      nums.push(parseNumBR(v));
+    }
+
+    // Divide nums ao meio: primeira metade = orçado, segunda = gasto
+    const half = Math.floor(nums.length / 2);
+    const orcado = nums.slice(0, half);
+    const gasto  = nums.slice(half, half * 2);
+
+    if (orcado.length === 0) continue;
+
+    if (parcCount === 0) parcCount = orcado.length;
+
+    result.push({ nome, orcado, gasto });
   }
-  if(cur)row.push(cur.trim());if(row.length>1)rows.push(row);
-  return rows;
+
+  // Gera nomes de parcelas
+  const n = parcCount || (result[0] ? result[0].orcado.length : 12);
+  const parcelas = Array.from({length: n}, (_,i) => 'Parcela '+(String(i+1).padStart(2,'0')));
+
+  return { raw: result, parcelas };
 }
 
-function norm(t){return(t||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,' ').trim();}
-function parseVal(v){if(!v)return 0;return parseFloat(v.replace(/R\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.'))||0;}
+function splitCSVLine(line) {
+  // Suporta campos entre aspas com vírgula ou ponto-e-vírgula como separador
+  const sep = line.includes(';') && !line.includes(',') ? ';' : ',';
+  const result = [];
+  let cur = '';
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuote = !inQuote; }
+    else if (ch === sep && !inQuote) { result.push(cur); cur = ''; }
+    else { cur += ch; }
+  }
+  result.push(cur);
+  return result;
+}
+
+function parseNumBR(s) {
+  if (s === null || s === undefined || s.trim() === '' || s.trim() === '-') return 0;
+  // Remove símbolo de moeda e espaços
+  let v = s.trim().replace(/[R$\s]/g,'');
+  // Formato BR: 1.234,56  →  1234.56
+  if (v.includes(',')) {
+    v = v.replace(/\./g,'').replace(',','.');
+  }
+  const n = parseFloat(v);
+  return isNaN(n) ? 0 : n;
+}
+
+// ── CARREGAR CSV ──────────────────────────────────────────────────────────────
+async function loadCSV() {
+  setLoading(true, 'Carregando dados da planilha…');
+  hideError();
+
+  // Tenta direto primeiro (Google Sheets pub CSV suporta CORS)
+  let text = null;
+  try {
+    const resp = await fetch(CSV_URL, { cache: 'no-store' });
+    if (resp.ok) text = await resp.text();
+  } catch(e) { text = null; }
+
+  // Fallback: proxy CORS
+  if (!text) {
+    try {
+      const resp = await fetch(PROXY + encodeURIComponent(CSV_URL), { cache: 'no-store' });
+      if (resp.ok) text = await resp.text();
+    } catch(e) { text = null; }
+  }
+
+  if (!text) {
+    setLoading(false);
+    showError('Não foi possível carregar a planilha. Verifique se o link está publicado como CSV e tente novamente.');
+    return;
+  }
+
+  try {
+    const parsed = parseCSV(text);
+    if (!parsed.raw.length) throw new Error('Nenhuma categoria encontrada no CSV.');
+    RAW = parsed.raw;
+    PARCELAS = parsed.parcelas;
+    currentParcela = -1;
+    document.getElementById('lastUpdate').textContent =
+      'Última atualização: ' + new Date().toLocaleString('pt-BR');
+    setLoading(false);
+    document.getElementById('appRoot').style.display = '';
+    renderTabs();
+    renderDash();
+  } catch(e) {
+    setLoading(false);
+    showError('Erro ao processar os dados: ' + e.message);
+  }
+}
+
+function setLoading(on, msg) {
+  document.getElementById('loadingOverlay').style.display = on ? 'flex' : 'none';
+  if (msg) document.getElementById('loadMsg').textContent = msg;
+}
+
+function showError(msg) {
+  const box = document.getElementById('errorBox');
+  box.innerHTML = '⚠️ ' + msg + ' <button class="btn-reload" onclick="loadCSV()">Tentar novamente</button>';
+  box.style.display = 'block';
+  document.getElementById('appRoot').style.display = '';
+}
+
+function hideError() {
+  document.getElementById('errorBox').style.display = 'none';
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmt(n){return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtPct(n){return n.toFixed(1)+'%';}
 
-// Limpa o nome da categoria removendo os sufixos de tipo
-function extractCatName(titulo){
-  return titulo
-    .replace(/\s*-\s*plano de trabalho\s*$/i,'')
-    .replace(/\s*-\s*quanto ja gastou\s*$/i,'')
-    .replace(/\s*-\s*saldo sobrando\s*$/i,'')
-    .replace(/\s*-\s*plano\s*$/i,'')
-    .replace(/\s*-\s*gasto\s*$/i,'')
-    .trim();
-}
-
-// Identifica o tipo da linha: 'orcado', 'gasto', 'saldo' ou null (linha de seção/cabeçalho)
-function getTipo(titulo){
-  const n = norm(titulo);
-  if(n.includes('plano de trabalho') || (n.includes('plano') && !n.includes('quanto'))) return 'orcado';
-  if(n.includes('quanto ja gastou') || n.includes('quanto') ) return 'gasto';
-  if(n.includes('saldo sobrando')) return 'saldo';
-  return null;
-}
-
-function processCSV(text){
-  const rows = parseCSV(text);
-  if(!rows.length) return;
-
-  // Linha 0 = cabeçalho (Item, Parcela 01, Parcela 02, ...)
-  const header = rows[0];
-
-  // Encontra colunas de parcelas (todas exceto a primeira coluna "Item")
-  const parcelaCols = [];
-  for(let i = 1; i < header.length; i++){
-    const h = (header[i]||'').trim();
-    if(h) parcelaCols.push({idx: i, nome: h});
-  }
-  allData.parcelas = parcelaCols.map(p => p.nome);
-
-  // Mapa de categorias indexado pelo nome normalizado
-  const mapa = {};
-
-  for(let ri = 1; ri < rows.length; ri++){
-    const r = rows[ri];
-    const titulo = (r[0]||'').trim();
-    if(!titulo) continue;
-
-    const tipo = getTipo(titulo);
-    if(!tipo) continue; // ignora linhas de seção como "ENCARGOS SOCIAIS", "SALDO TOTAL GERAL"
-
-    // Nome limpo da categoria
-    const catNorm = norm(extractCatName(titulo));
-    const catDisplay = extractCatName(titulo);
-
-    if(!mapa[catNorm]){
-      mapa[catNorm] = {
-        nome: catDisplay,
-        orcado: Array(parcelaCols.length).fill(0),
-        gasto: Array(parcelaCols.length).fill(0)
-      };
-    }
-
-    parcelaCols.forEach((p, pi) => {
-      const val = parseVal(r[p.idx]);
-      if(tipo === 'orcado') mapa[catNorm].orcado[pi] = val;
-      if(tipo === 'gasto')  mapa[catNorm].gasto[pi]  = val;
-    });
-  }
-
-  allData.categorias = Object.values(mapa);
-}
-
 function getParcelaData(pi){
-  // Resumo Geral (pi === -1): soma todas as parcelas
   if(pi === -1){
-    return allData.categorias.map(c=>({
+    return RAW.map(c=>({
       nome: c.nome,
       orcado: c.orcado.reduce((a,b)=>a+b,0),
       gasto:  c.gasto.reduce((a,b)=>a+b,0)
     }));
   }
-  return allData.categorias.map(c=>({nome:c.nome, orcado:c.orcado[pi]||0, gasto:c.gasto[pi]||0}));
+  return RAW.map(c=>({nome:c.nome, orcado:c.orcado[pi]||0, gasto:c.gasto[pi]||0}));
 }
 
 function getSummary(pi){
   const cats = getParcelaData(pi);
-  let orc=0, gas=0;
-  cats.forEach(c=>{orc+=c.orcado; gas+=c.gasto;});
-  return{orc, gas, saldo:orc-gas};
+  let orc=0,gas=0;
+  cats.forEach(c=>{orc+=c.orcado;gas+=c.gasto;});
+  return{orc,gas,saldo:orc-gas};
 }
 
+function pctClass(p){
+  if(p>=100) return 'pct-high';
+  if(p>=70)  return 'pct-mid';
+  return 'pct-low';
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
 function renderTabs(){
   const bar = document.getElementById('tabBar');
-  bar.innerHTML = '';
+  bar.innerHTML='';
   const home = document.createElement('button');
-  home.className = 'tab home' + (currentParcela===-1?' active':'');
-  home.textContent = 'Resumo Geral';
-  home.onclick = ()=>{currentParcela=-1; renderTabs(); renderDash();};
+  home.className='tab home'+(currentParcela===-1?' active':'');
+  home.textContent='Resumo Geral';
+  home.onclick=()=>{currentParcela=-1;renderTabs();renderDash();};
   bar.appendChild(home);
-  allData.parcelas.forEach((p,i)=>{
-    const btn = document.createElement('button');
-    btn.className = 'tab'+(i===currentParcela?' active':'');
-    btn.textContent = 'P'+(i+1);
-    btn.title = p;
-    btn.onclick = ()=>{currentParcela=i; renderTabs(); renderDash();};
+  PARCELAS.forEach((p,i)=>{
+    const btn=document.createElement('button');
+    btn.className='tab'+(i===currentParcela?' active':'');
+    btn.textContent='P'+(i+1);
+    btn.title=p;
+    btn.onclick=()=>{currentParcela=i;renderTabs();renderDash();};
     bar.appendChild(btn);
   });
 }
 
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
 function renderDash(){
-  const el = document.getElementById('dashContent');
-  const pi = currentParcela;
-  const sum = getSummary(pi);
-  const cats = getParcelaData(pi);
-  const titulo = pi===-1 ? 'Resumo Geral' : allData.parcelas[pi];
+  const el=document.getElementById('dashContent');
+  const pi=currentParcela;
+  const sum=getSummary(pi);
+  const cats=getParcelaData(pi);
+  const titulo=pi===-1?'Resumo Geral':PARCELAS[pi];
 
   el.innerHTML=`
   <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">${titulo}</div>
   <div class="metrics">
-    <div class="mcard"><div class="mlabel">Total orçado</div><div class="mval">${fmt(sum.orc)}</div><div class="msub">Plano de trabalho</div></div>
-    <div class="mcard"><div class="mlabel">Total gasto</div><div class="mval red">${fmt(sum.gas)}</div><div class="msub">Lançamentos registrados</div></div>
-    <div class="mcard"><div class="mlabel">Saldo disponível</div><div class="mval ${sum.saldo>=0?'green':'red'}">${fmt(sum.saldo)}</div><div class="msub">Restante a gastar</div></div>
+    <div class="mcard">
+      <div class="mlabel">Total orçado</div>
+      <div class="mval">${fmt(sum.orc)}</div>
+      <div class="msub">Plano de trabalho</div>
+    </div>
+    <div class="mcard">
+      <div class="mlabel">Total gasto</div>
+      <div class="mval red">${fmt(sum.gas)}</div>
+      <div class="msub">Lançamentos registrados</div>
+    </div>
+    <div class="mcard">
+      <div class="mlabel">Saldo disponível</div>
+      <div class="mval ${sum.saldo>=0?'green':'red'}">${fmt(sum.saldo)}</div>
+      <div class="msub">Restante a gastar</div>
+    </div>
   </div>
+
   <div class="charts-row">
     <div class="ccard">
       <div class="ctitle">Orçado × Gasto × Saldo por categoria</div>
@@ -234,13 +350,24 @@ function renderDash(){
       <div class="donut-legend" id="donutLegend"></div>
     </div>
   </div>
+
   <div class="tcard">
     <div class="ttitle">Detalhamento por categoria</div>
     <table>
-      <thead><tr><th>Categoria</th><th>Orçado</th><th>Gasto</th><th>Saldo</th><th>% Exec.</th><th>Progresso</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Categoria</th>
+          <th>Orçado</th>
+          <th>Gasto</th>
+          <th>Saldo</th>
+          <th>% Exec.</th>
+          <th>Progresso</th>
+        </tr>
+      </thead>
       <tbody id="catTableBody"></tbody>
     </table>
   </div>
+
   <div class="fcard">
     <div class="ttitle">+ Registrar nova despesa <span style="font-size:10px;font-weight:400;color:#9ca3af;">(lançamento manual — não altera a planilha)</span></div>
     <div class="frow">
@@ -251,6 +378,7 @@ function renderDash(){
     </div>
     <button class="btn-launch" onclick="lancarDespesa()">Lançar despesa</button>
   </div>
+
   <div class="tcard">
     <div class="ttitle">Lançamentos manuais${pi===-1?' — todas as parcelas':' — '+titulo}</div>
     <table>
@@ -259,19 +387,23 @@ function renderDash(){
     </table>
   </div>`;
 
-  const catBody = document.getElementById('catTableBody');
+  const catBody=document.getElementById('catTableBody');
   cats.forEach((c,i)=>{
-    const saldo = c.orcado - c.gasto;
-    const pct = c.orcado > 0 ? (c.gasto / c.orcado * 100) : 0;
-    const color = COLORS[i % COLORS.length];
-    const tr = document.createElement('tr');
+    const saldo=c.orcado-c.gasto;
+    const pct=c.orcado>0?(c.gasto/c.orcado*100):0;
+    const color=COLORS[i%COLORS.length];
+    const tr=document.createElement('tr');
     tr.innerHTML=`
-      <td><strong>${c.nome}</strong></td>
-      <td>${fmt(c.orcado)}</td>
-      <td><span class="${saldo<0?'tag-red':'tag-blue'}">${fmt(c.gasto)}</span></td>
-      <td><span class="${saldo>=0?'tag-green':'tag-red'}">${fmt(saldo)}</span></td>
-      <td>${fmtPct(pct)}</td>
-      <td><div class="prog-bg"><div class="prog-bar" style="width:${Math.min(pct,100).toFixed(1)}%;background:${pct>100?'#ef4444':color};"></div></div></td>`;
+      <td><span class="cat-name">${c.nome}</span></td>
+      <td style="white-space:nowrap">${fmt(c.orcado)}</td>
+      <td style="white-space:nowrap"><span class="${c.gasto>0?'tag-blue':''}">${fmt(c.gasto)}</span></td>
+      <td style="white-space:nowrap"><span class="${saldo>=0?'tag-green':'tag-red'}">${fmt(saldo)}</span></td>
+      <td><span class="pct-badge ${pctClass(pct)}">${fmtPct(pct)}</span></td>
+      <td style="min-width:100px">
+        <div class="prog-bg">
+          <div class="prog-bar" style="width:${Math.min(pct,100).toFixed(1)}%;background:${pct>=100?'#ef4444':pct>=70?'#f59e0b':color};"></div>
+        </div>
+      </td>`;
     catBody.appendChild(tr);
   });
 
@@ -280,127 +412,90 @@ function renderDash(){
   setTimeout(()=>{
     if(barChart) barChart.destroy();
     if(donutChart) donutChart.destroy();
-    const barCtx = document.getElementById('barChart');
-    const donutCtx = document.getElementById('donutChart');
+
+    const barCtx=document.getElementById('barChart');
     if(barCtx){
-      barChart = new Chart(barCtx,{
+      barChart=new Chart(barCtx,{
         type:'bar',
         data:{
-          labels: cats.map(c=>c.nome.length>14?c.nome.slice(0,14)+'…':c.nome),
+          labels:cats.map(c=>c.nome.length>16?c.nome.slice(0,15)+'…':c.nome),
           datasets:[
-            {label:'Orçado', data:cats.map(c=>c.orcado), backgroundColor:'#3b82f6', borderRadius:3},
-            {label:'Gasto',  data:cats.map(c=>c.gasto),  backgroundColor:'#10b981', borderRadius:3},
-            {label:'Saldo',  data:cats.map(c=>Math.max(c.orcado-c.gasto,0)), backgroundColor:'#f59e0b', borderRadius:3}
+            {label:'Orçado',data:cats.map(c=>c.orcado),backgroundColor:'#3b82f6',borderRadius:3},
+            {label:'Gasto', data:cats.map(c=>c.gasto), backgroundColor:'#10b981',borderRadius:3},
+            {label:'Saldo', data:cats.map(c=>Math.max(c.orcado-c.gasto,0)),backgroundColor:'#f59e0b',borderRadius:3}
           ]
         },
         options:{
-          responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
+          responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
           scales:{
-            x:{grid:{display:false}, ticks:{font:{size:9},color:'#9ca3af',autoSkip:false,maxRotation:30}},
-            y:{grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:9},color:'#9ca3af',callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
+            x:{grid:{display:false},ticks:{font:{size:9},color:'#9ca3af',autoSkip:false,maxRotation:35}},
+            y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#9ca3af',callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
           }
         }
       });
     }
+
+    const donutCtx=document.getElementById('donutChart');
     if(donutCtx){
-      const filtered = cats.filter(c=>c.gasto>0);
-      const gastos = filtered.map(c=>c.gasto);
-      const labels = filtered.map(c=>c.nome);
-      const colors = filtered.map((_,i)=>COLORS[i%COLORS.length]);
-      donutChart = new Chart(donutCtx,{
+      const filtered=cats.filter(c=>c.gasto>0);
+      const gastos=filtered.map(c=>c.gasto);
+      const labels=filtered.map(c=>c.nome);
+      const colors=filtered.map((_,i)=>COLORS[i%COLORS.length]);
+      donutChart=new Chart(donutCtx,{
         type:'doughnut',
-        data:{labels, datasets:[{data:gastos, backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]},
-        options:{responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
+        data:{labels,datasets:[{data:gastos,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
       });
-      const leg = document.getElementById('donutLegend');
+      const leg=document.getElementById('donutLegend');
       if(leg){
-        const total = gastos.reduce((a,b)=>a+b,0);
-        leg.innerHTML = labels.map((l,i)=>`<div class="donut-legend-item"><span><span class="donut-dot" style="background:${colors[i]}"></span>${l}</span><span>${total>0?fmtPct(gastos[i]/total*100):'0%'}</span></div>`).join('');
+        const total=gastos.reduce((a,b)=>a+b,0);
+        leg.innerHTML=labels.map((l,i)=>`
+          <div class="donut-legend-item">
+            <span><span class="donut-dot" style="background:${colors[i]}"></span>${l}</span>
+            <span>${total>0?fmtPct(gastos[i]/total*100):'0%'}</span>
+          </div>`).join('');
       }
     }
   },50);
 }
 
+// ── LANÇAMENTOS ───────────────────────────────────────────────────────────────
 function renderLancamentos(){
-  const body = document.getElementById('lancTableBody');
-  if(!body) return;
-  body.innerHTML = '';
-  const lancs = currentParcela===-1
-    ? allData.lancamentos
-    : allData.lancamentos.filter(l=>l.parcela===currentParcela);
-  if(lancs.length===0){
+  const body=document.getElementById('lancTableBody');
+  if(!body)return;
+  body.innerHTML='';
+  const lancs=currentParcela===-1?lancamentos:lancamentos.filter(l=>l.parcela===currentParcela);
+  if(!lancs.length){
     body.innerHTML='<tr><td colspan="6" style="color:#9ca3af;text-align:center;padding:16px;">Nenhum lançamento registrado</td></tr>';
     return;
   }
   lancs.forEach(l=>{
-    const nomeParcela = l.parcela===-1 ? 'Geral' : (allData.parcelas[l.parcela]||'');
-    const tr = document.createElement('tr');
+    const tr=document.createElement('tr');
     tr.innerHTML=`<td>${l.data}</td><td>${l.cat}</td><td>${l.desc||'—'}</td><td style="color:#dc2626;font-weight:600">${fmt(l.val)}</td><td><span class="badge-manual">Manual</span></td><td><button class="del-btn" onclick="deleteLanc(${l.id})">✕</button></td>`;
     body.appendChild(tr);
   });
 }
 
-let lancId = 0;
 function lancarDespesa(){
-  const data = document.getElementById('fData').value;
-  const cat  = document.getElementById('fCat').value;
-  const desc = document.getElementById('fDesc').value;
-  const val  = parseFloat(document.getElementById('fVal').value)||0;
+  const data=document.getElementById('fData').value;
+  const cat=document.getElementById('fCat').value;
+  const desc=document.getElementById('fDesc').value;
+  const val=parseFloat(document.getElementById('fVal').value)||0;
   if(!val||val<=0){alert('Informe um valor válido.');return;}
-  allData.lancamentos.push({id:lancId++, parcela:currentParcela, data, cat, desc, val});
+  lancamentos.push({id:lancId++,parcela:currentParcela,data,cat,desc,val});
   document.getElementById('fVal').value='';
   document.getElementById('fDesc').value='';
   renderLancamentos();
 }
 
 function deleteLanc(id){
-  allData.lancamentos = allData.lancamentos.filter(l=>l.id!==id);
+  lancamentos=lancamentos.filter(l=>l.id!==id);
   renderLancamentos();
 }
 
-function mostrarErro(detalhe){
-  document.getElementById('dashContent').innerHTML=`
-  <div class="erro-box">
-    <strong>Não foi possível carregar os dados da planilha.</strong>
-    O navegador bloqueou a requisição por política de CORS. Isso é comum ao abrir o arquivo diretamente pelo Explorador de Arquivos (<code>file://</code>).<br><br>
-    ${detalhe?`<em>Detalhe: ${detalhe}</em><br><br>`:''}
-    <strong>Solução — rodar um servidor local:</strong><br>
-    1. Abra o terminal na pasta onde está o arquivo HTML<br>
-    2. Execute: <code>npx serve .</code><br>
-    3. Acesse <code>http://localhost:3000</code> no navegador<br><br>
-    <strong>Alternativa — extensão no Chrome:</strong><br>
-    Instale <a href="https://chrome.google.com/webstore/detail/allow-cors/lhobafahddgcelffkeicbaginigeejlf" target="_blank" style="color:#1d4ed8;">Allow CORS: Access-Control-Allow-Origin</a> e recarregue a página.
-  </div>`;
-}
-
-async function tryFetch(url){
-  const res = await fetch(url, {cache:'no-cache'});
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const text = await res.text();
-  if(!text || text.trim().length < 20) throw new Error('resposta vazia');
-  return text;
-}
-
-async function loadData(){
-  for(const makeUrl of PROXIES){
-    try{
-      const url = makeUrl(SHEET_CSV);
-      const text = await tryFetch(url);
-      processCSV(text);
-      if(allData.categorias.length === 0) continue;
-      currentParcela = -1; // começa no Resumo Geral
-      renderTabs();
-      renderDash();
-      return;
-    }catch(e){
-      console.warn('Tentativa falhou:', e.message);
-    }
-  }
-  mostrarErro('Todos os proxies falharam.');
-}
-
-loadData();
+// ── INICIAR ───────────────────────────────────────────────────────────────────
+loadCSV();
 </script>
 </body>
 </html>
