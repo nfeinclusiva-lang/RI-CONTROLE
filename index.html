@@ -86,78 +86,133 @@ function parseCSV(text){
   for(let i=0;i<text.length;i++){
     const c=text[i];
     if(c==='"'){inQ=!inQ;}
-    else if(c===','&&!inQ){row.push(cur);cur='';}
-    else if(c==='\n'&&!inQ){row.push(cur);rows.push(row);row=[];cur='';}
-    else{cur+=c;}
+    else if(c===','&&!inQ){row.push(cur.trim());cur='';}
+    else if(c==='\n'&&!inQ){row.push(cur.trim());rows.push(row);row=[];cur='';}
+    else if(c!=='\r'){cur+=c;}
   }
-  if(cur)row.push(cur);if(row.length)rows.push(row);
+  if(cur)row.push(cur.trim());if(row.length>1)rows.push(row);
   return rows;
 }
 
-function norm(t){return(t||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
-function parseVal(v){if(!v)return 0;return parseFloat(v.replace(/R\$/g,'').replace(/\./g,'').replace(',','.'))||0;}
+function norm(t){return(t||'').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/\s+/g,' ').trim();}
+function parseVal(v){if(!v)return 0;return parseFloat(v.replace(/R\$/g,'').replace(/\s/g,'').replace(/\./g,'').replace(',','.'))||0;}
 function fmt(n){return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtPct(n){return n.toFixed(1)+'%';}
 
+// Limpa o nome da categoria removendo os sufixos de tipo
+function extractCatName(titulo){
+  return titulo
+    .replace(/\s*-\s*plano de trabalho\s*$/i,'')
+    .replace(/\s*-\s*quanto ja gastou\s*$/i,'')
+    .replace(/\s*-\s*saldo sobrando\s*$/i,'')
+    .replace(/\s*-\s*plano\s*$/i,'')
+    .replace(/\s*-\s*gasto\s*$/i,'')
+    .trim();
+}
+
+// Identifica o tipo da linha: 'orcado', 'gasto', 'saldo' ou null (linha de seção/cabeçalho)
+function getTipo(titulo){
+  const n = norm(titulo);
+  if(n.includes('plano de trabalho') || (n.includes('plano') && !n.includes('quanto'))) return 'orcado';
+  if(n.includes('quanto ja gastou') || n.includes('quanto') ) return 'gasto';
+  if(n.includes('saldo sobrando')) return 'saldo';
+  return null;
+}
+
 function processCSV(text){
-  const rows=parseCSV(text);
-  const header=rows.find(r=>r[0]&&r[0].toLowerCase().includes('item'));
-  if(!header)return;
-  const parcelaCols=[];
-  header.forEach((h,i)=>{if(h&&h.toLowerCase().includes('parcela'))parcelaCols.push({idx:i,nome:h.trim()});});
-  allData.parcelas=parcelaCols.map(p=>p.nome);
-  const mapa={};
-  rows.forEach(r=>{
-    const titulo=r[0];if(!titulo)return;
-    const nt=norm(titulo);
-    let tipo=null;
-    if(nt.includes('plano'))tipo='orcado';
-    else if(nt.includes('gasto'))tipo='gasto';
-    if(!tipo)return;
-    let cat=nt.replace(/- plano de trabalho/g,'').replace(/- quanto ja gastou/g,'').replace(/- saldo sobrando/g,'').replace(/- plano/g,'').replace(/- gasto/g,'').trim();
-    if(!mapa[cat])mapa[cat]={nome:cat,orcado:Array(parcelaCols.length).fill(0),gasto:Array(parcelaCols.length).fill(0)};
-    parcelaCols.forEach((p,pi)=>{
-      const val=parseVal(r[p.idx]);
-      if(tipo==='orcado')mapa[cat].orcado[pi]=val;
-      if(tipo==='gasto')mapa[cat].gasto[pi]=val;
+  const rows = parseCSV(text);
+  if(!rows.length) return;
+
+  // Linha 0 = cabeçalho (Item, Parcela 01, Parcela 02, ...)
+  const header = rows[0];
+
+  // Encontra colunas de parcelas (todas exceto a primeira coluna "Item")
+  const parcelaCols = [];
+  for(let i = 1; i < header.length; i++){
+    const h = (header[i]||'').trim();
+    if(h) parcelaCols.push({idx: i, nome: h});
+  }
+  allData.parcelas = parcelaCols.map(p => p.nome);
+
+  // Mapa de categorias indexado pelo nome normalizado
+  const mapa = {};
+
+  for(let ri = 1; ri < rows.length; ri++){
+    const r = rows[ri];
+    const titulo = (r[0]||'').trim();
+    if(!titulo) continue;
+
+    const tipo = getTipo(titulo);
+    if(!tipo) continue; // ignora linhas de seção como "ENCARGOS SOCIAIS", "SALDO TOTAL GERAL"
+
+    // Nome limpo da categoria
+    const catNorm = norm(extractCatName(titulo));
+    const catDisplay = extractCatName(titulo);
+
+    if(!mapa[catNorm]){
+      mapa[catNorm] = {
+        nome: catDisplay,
+        orcado: Array(parcelaCols.length).fill(0),
+        gasto: Array(parcelaCols.length).fill(0)
+      };
+    }
+
+    parcelaCols.forEach((p, pi) => {
+      const val = parseVal(r[p.idx]);
+      if(tipo === 'orcado') mapa[catNorm].orcado[pi] = val;
+      if(tipo === 'gasto')  mapa[catNorm].gasto[pi]  = val;
     });
-  });
-  allData.categorias=Object.values(mapa);
+  }
+
+  allData.categorias = Object.values(mapa);
 }
 
 function getParcelaData(pi){
-  return allData.categorias.map(c=>({nome:c.nome,orcado:c.orcado[pi]||0,gasto:c.gasto[pi]||0}));
+  // Resumo Geral (pi === -1): soma todas as parcelas
+  if(pi === -1){
+    return allData.categorias.map(c=>({
+      nome: c.nome,
+      orcado: c.orcado.reduce((a,b)=>a+b,0),
+      gasto:  c.gasto.reduce((a,b)=>a+b,0)
+    }));
+  }
+  return allData.categorias.map(c=>({nome:c.nome, orcado:c.orcado[pi]||0, gasto:c.gasto[pi]||0}));
 }
+
 function getSummary(pi){
-  const cats=getParcelaData(pi);
-  let orc=0,gas=0;
-  cats.forEach(c=>{orc+=c.orcado;gas+=c.gasto;});
-  return{orc,gas,saldo:orc-gas};
+  const cats = getParcelaData(pi);
+  let orc=0, gas=0;
+  cats.forEach(c=>{orc+=c.orcado; gas+=c.gasto;});
+  return{orc, gas, saldo:orc-gas};
 }
 
 function renderTabs(){
-  const bar=document.getElementById('tabBar');
-  bar.innerHTML='';
-  const home=document.createElement('button');
-  home.className='tab home';home.textContent='Resumo Geral';
-  home.onclick=()=>{currentParcela=0;renderTabs();renderDash();};
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = '';
+  const home = document.createElement('button');
+  home.className = 'tab home' + (currentParcela===-1?' active':'');
+  home.textContent = 'Resumo Geral';
+  home.onclick = ()=>{currentParcela=-1; renderTabs(); renderDash();};
   bar.appendChild(home);
   allData.parcelas.forEach((p,i)=>{
-    const btn=document.createElement('button');
-    btn.className='tab'+(i===currentParcela?' active':'');
-    btn.textContent='P'+(i+1);btn.title=p;
-    btn.onclick=()=>{currentParcela=i;renderTabs();renderDash();};
+    const btn = document.createElement('button');
+    btn.className = 'tab'+(i===currentParcela?' active':'');
+    btn.textContent = 'P'+(i+1);
+    btn.title = p;
+    btn.onclick = ()=>{currentParcela=i; renderTabs(); renderDash();};
     bar.appendChild(btn);
   });
 }
 
 function renderDash(){
-  const el=document.getElementById('dashContent');
-  const pi=currentParcela;
-  const sum=getSummary(pi);
-  const cats=getParcelaData(pi);
+  const el = document.getElementById('dashContent');
+  const pi = currentParcela;
+  const sum = getSummary(pi);
+  const cats = getParcelaData(pi);
+  const titulo = pi===-1 ? 'Resumo Geral' : allData.parcelas[pi];
 
   el.innerHTML=`
+  <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">${titulo}</div>
   <div class="metrics">
     <div class="mcard"><div class="mlabel">Total orçado</div><div class="mval">${fmt(sum.orc)}</div><div class="msub">Plano de trabalho</div></div>
     <div class="mcard"><div class="mlabel">Total gasto</div><div class="mval red">${fmt(sum.gas)}</div><div class="msub">Lançamentos registrados</div></div>
@@ -171,11 +226,11 @@ function renderDash(){
         <span><span class="leg-sq" style="background:#10b981"></span>Gasto</span>
         <span><span class="leg-sq" style="background:#f59e0b"></span>Saldo</span>
       </div>
-      <div style="position:relative;height:200px;"><canvas id="barChart" role="img" aria-label="Gráfico de barras orçado vs gasto por categoria"></canvas></div>
+      <div style="position:relative;height:200px;"><canvas id="barChart"></canvas></div>
     </div>
     <div class="ccard">
       <div class="ctitle">% executado por categoria</div>
-      <div style="position:relative;height:140px;"><canvas id="donutChart" role="img" aria-label="Gráfico de rosca percentual por categoria"></canvas></div>
+      <div style="position:relative;height:140px;"><canvas id="donutChart"></canvas></div>
       <div class="donut-legend" id="donutLegend"></div>
     </div>
   </div>
@@ -197,19 +252,19 @@ function renderDash(){
     <button class="btn-launch" onclick="lancarDespesa()">Lançar despesa</button>
   </div>
   <div class="tcard">
-    <div class="ttitle">Lançamentos desta parcela</div>
+    <div class="ttitle">Lançamentos manuais${pi===-1?' — todas as parcelas':' — '+titulo}</div>
     <table>
       <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Origem</th><th></th></tr></thead>
       <tbody id="lancTableBody"></tbody>
     </table>
   </div>`;
 
-  const catBody=document.getElementById('catTableBody');
+  const catBody = document.getElementById('catTableBody');
   cats.forEach((c,i)=>{
-    const saldo=c.orcado-c.gasto;
-    const pct=c.orcado>0?(c.gasto/c.orcado*100):0;
-    const color=COLORS[i%COLORS.length];
-    const tr=document.createElement('tr');
+    const saldo = c.orcado - c.gasto;
+    const pct = c.orcado > 0 ? (c.gasto / c.orcado * 100) : 0;
+    const color = COLORS[i % COLORS.length];
+    const tr = document.createElement('tr');
     tr.innerHTML=`
       <td><strong>${c.nome}</strong></td>
       <td>${fmt(c.orcado)}</td>
@@ -223,90 +278,94 @@ function renderDash(){
   renderLancamentos();
 
   setTimeout(()=>{
-    if(barChart)barChart.destroy();
-    if(donutChart)donutChart.destroy();
-    const barCtx=document.getElementById('barChart');
-    const donutCtx=document.getElementById('donutChart');
+    if(barChart) barChart.destroy();
+    if(donutChart) donutChart.destroy();
+    const barCtx = document.getElementById('barChart');
+    const donutCtx = document.getElementById('donutChart');
     if(barCtx){
-      barChart=new Chart(barCtx,{
+      barChart = new Chart(barCtx,{
         type:'bar',
         data:{
-          labels:cats.map(c=>c.nome.length>12?c.nome.slice(0,12)+'…':c.nome),
+          labels: cats.map(c=>c.nome.length>14?c.nome.slice(0,14)+'…':c.nome),
           datasets:[
-            {label:'Orçado',data:cats.map(c=>c.orcado),backgroundColor:'#3b82f6',borderRadius:3},
-            {label:'Gasto',data:cats.map(c=>c.gasto),backgroundColor:'#10b981',borderRadius:3},
-            {label:'Saldo',data:cats.map(c=>Math.max(c.orcado-c.gasto,0)),backgroundColor:'#f59e0b',borderRadius:3}
+            {label:'Orçado', data:cats.map(c=>c.orcado), backgroundColor:'#3b82f6', borderRadius:3},
+            {label:'Gasto',  data:cats.map(c=>c.gasto),  backgroundColor:'#10b981', borderRadius:3},
+            {label:'Saldo',  data:cats.map(c=>Math.max(c.orcado-c.gasto,0)), backgroundColor:'#f59e0b', borderRadius:3}
           ]
         },
         options:{
-          responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
+          responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
           scales:{
-            x:{grid:{display:false},ticks:{font:{size:9},color:'#9ca3af',autoSkip:false,maxRotation:25}},
-            y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#9ca3af',callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
+            x:{grid:{display:false}, ticks:{font:{size:9},color:'#9ca3af',autoSkip:false,maxRotation:30}},
+            y:{grid:{color:'rgba(0,0,0,0.05)'}, ticks:{font:{size:9},color:'#9ca3af',callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
           }
         }
       });
     }
     if(donutCtx){
-      const filtered=cats.filter(c=>c.gasto>0);
-      const gastos=filtered.map(c=>c.gasto);
-      const labels=filtered.map(c=>c.nome);
-      const colors=filtered.map((_,i)=>COLORS[i%COLORS.length]);
-      donutChart=new Chart(donutCtx,{
+      const filtered = cats.filter(c=>c.gasto>0);
+      const gastos = filtered.map(c=>c.gasto);
+      const labels = filtered.map(c=>c.nome);
+      const colors = filtered.map((_,i)=>COLORS[i%COLORS.length]);
+      donutChart = new Chart(donutCtx,{
         type:'doughnut',
-        data:{labels,datasets:[{data:gastos,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
+        data:{labels, datasets:[{data:gastos, backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]},
+        options:{responsive:true, maintainAspectRatio:false, cutout:'65%', plugins:{legend:{display:false}, tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
       });
-      const leg=document.getElementById('donutLegend');
+      const leg = document.getElementById('donutLegend');
       if(leg){
-        const total=gastos.reduce((a,b)=>a+b,0);
-        leg.innerHTML=labels.map((l,i)=>`<div class="donut-legend-item"><span><span class="donut-dot" style="background:${colors[i]}"></span>${l}</span><span>${total>0?fmtPct(gastos[i]/total*100):'0%'}</span></div>`).join('');
+        const total = gastos.reduce((a,b)=>a+b,0);
+        leg.innerHTML = labels.map((l,i)=>`<div class="donut-legend-item"><span><span class="donut-dot" style="background:${colors[i]}"></span>${l}</span><span>${total>0?fmtPct(gastos[i]/total*100):'0%'}</span></div>`).join('');
       }
     }
   },50);
 }
 
 function renderLancamentos(){
-  const body=document.getElementById('lancTableBody');
-  if(!body)return;
-  body.innerHTML='';
-  const lancs=allData.lancamentos.filter(l=>l.parcela===currentParcela);
+  const body = document.getElementById('lancTableBody');
+  if(!body) return;
+  body.innerHTML = '';
+  const lancs = currentParcela===-1
+    ? allData.lancamentos
+    : allData.lancamentos.filter(l=>l.parcela===currentParcela);
   if(lancs.length===0){
     body.innerHTML='<tr><td colspan="6" style="color:#9ca3af;text-align:center;padding:16px;">Nenhum lançamento registrado</td></tr>';
     return;
   }
   lancs.forEach(l=>{
-    const tr=document.createElement('tr');
+    const nomeParcela = l.parcela===-1 ? 'Geral' : (allData.parcelas[l.parcela]||'');
+    const tr = document.createElement('tr');
     tr.innerHTML=`<td>${l.data}</td><td>${l.cat}</td><td>${l.desc||'—'}</td><td style="color:#dc2626;font-weight:600">${fmt(l.val)}</td><td><span class="badge-manual">Manual</span></td><td><button class="del-btn" onclick="deleteLanc(${l.id})">✕</button></td>`;
     body.appendChild(tr);
   });
 }
 
-let lancId=0;
+let lancId = 0;
 function lancarDespesa(){
-  const data=document.getElementById('fData').value;
-  const cat=document.getElementById('fCat').value;
-  const desc=document.getElementById('fDesc').value;
-  const val=parseFloat(document.getElementById('fVal').value)||0;
+  const data = document.getElementById('fData').value;
+  const cat  = document.getElementById('fCat').value;
+  const desc = document.getElementById('fDesc').value;
+  const val  = parseFloat(document.getElementById('fVal').value)||0;
   if(!val||val<=0){alert('Informe um valor válido.');return;}
-  allData.lancamentos.push({id:lancId++,parcela:currentParcela,data,cat,desc,val});
+  allData.lancamentos.push({id:lancId++, parcela:currentParcela, data, cat, desc, val});
   document.getElementById('fVal').value='';
   document.getElementById('fDesc').value='';
   renderLancamentos();
 }
 
 function deleteLanc(id){
-  allData.lancamentos=allData.lancamentos.filter(l=>l.id!==id);
+  allData.lancamentos = allData.lancamentos.filter(l=>l.id!==id);
   renderLancamentos();
 }
 
-function mostrarErro(){
+function mostrarErro(detalhe){
   document.getElementById('dashContent').innerHTML=`
   <div class="erro-box">
     <strong>Não foi possível carregar os dados da planilha.</strong>
-    O navegador bloqueou a requisição por política de CORS (segurança). Isso é comum ao abrir o arquivo diretamente pelo Explorador de Arquivos (<code>file://</code>).<br><br>
-    <strong>Solução mais simples — rodar um servidor local:</strong><br>
+    O navegador bloqueou a requisição por política de CORS. Isso é comum ao abrir o arquivo diretamente pelo Explorador de Arquivos (<code>file://</code>).<br><br>
+    ${detalhe?`<em>Detalhe: ${detalhe}</em><br><br>`:''}
+    <strong>Solução — rodar um servidor local:</strong><br>
     1. Abra o terminal na pasta onde está o arquivo HTML<br>
     2. Execute: <code>npx serve .</code><br>
     3. Acesse <code>http://localhost:3000</code> no navegador<br><br>
@@ -330,7 +389,7 @@ async function loadData(){
       const text = await tryFetch(url);
       processCSV(text);
       if(allData.categorias.length === 0) continue;
-      currentParcela = 0;
+      currentParcela = -1; // começa no Resumo Geral
       renderTabs();
       renderDash();
       return;
@@ -338,7 +397,7 @@ async function loadData(){
       console.warn('Tentativa falhou:', e.message);
     }
   }
-  mostrarErro();
+  mostrarErro('Todos os proxies falharam.');
 }
 
 loadData();
