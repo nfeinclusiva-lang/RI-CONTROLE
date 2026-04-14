@@ -1,501 +1,325 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Financeiro</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{background:#f1f3f8;font-family:Arial,sans-serif;padding:20px;}
-.db{background:#f8f9fb;border-radius:12px;padding:16px;}
-.tab-bar{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;}
-.tab{padding:5px 11px;border-radius:6px;font-size:11px;cursor:pointer;background:#e5e7eb;color:#6b7280;border:none;font-weight:500;transition:all .15s;}
-.tab.active{background:#2563eb;color:#fff;}
-.tab.home{background:#374151;color:#fff;}
-.tab:hover{opacity:.85;}
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
-.mcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px 14px;}
-.mlabel{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
-.mval{font-size:20px;font-weight:700;color:#111827;}
-.mval.green{color:#059669;}
-.mval.red{color:#dc2626;}
-.msub{font-size:10px;color:#9ca3af;margin-top:3px;}
-.charts-row{display:grid;grid-template-columns:1.5fr 1fr;gap:10px;margin-bottom:14px;}
-.ccard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;}
-.ctitle{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;font-weight:600;}
-.leg{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
-.leg span{display:flex;align-items:center;gap:4px;font-size:11px;color:#6b7280;}
-.leg-sq{width:9px;height:9px;border-radius:2px;display:inline-block;}
-.tcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px;}
-.ttitle{font-size:11px;font-weight:700;color:#374151;margin-bottom:12px;}
-table{width:100%;border-collapse:collapse;font-size:12px;}
-th{text-align:left;color:#9ca3af;font-weight:600;font-size:10px;text-transform:uppercase;padding:6px 8px;border-bottom:2px solid #f3f4f6;}
-td{padding:8px;color:#374151;border-bottom:1px solid #f9fafb;}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:#fafafa;}
-.tag-green{background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
-.tag-red{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
-.tag-blue{background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
-.prog-bg{background:#f3f4f6;border-radius:4px;height:7px;overflow:hidden;min-width:90px;}
-.prog-bar{height:7px;border-radius:4px;transition:width .4s;}
-.fcard{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px;}
-.frow{display:grid;grid-template-columns:130px 1fr 1fr 100px;gap:8px;align-items:end;}
-.flabel{font-size:10px;color:#9ca3af;margin-bottom:4px;font-weight:600;text-transform:uppercase;}
-input,select{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:7px 9px;font-size:12px;color:#374151;background:#f9fafb;outline:none;}
-input:focus,select:focus{border-color:#2563eb;background:#fff;}
-.btn-launch{background:#2563eb;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;margin-top:10px;}
-.btn-launch:hover{background:#1d4ed8;}
-.badge-manual{background:#ede9fe;color:#5b21b6;padding:2px 7px;border-radius:20px;font-size:10px;}
-.del-btn{background:none;border:none;color:#ef4444;cursor:pointer;font-size:14px;padding:0 4px;}
-.donut-legend{margin-top:10px;}
-.donut-legend-item{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#6b7280;padding:3px 0;}
-.donut-legend-item span:first-child{display:flex;align-items:center;gap:6px;}
-.donut-dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-.cat-name{font-weight:600;color:#1f2937;}
-.pct-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 6px;border-radius:12px;}
-.pct-low{background:#d1fae5;color:#065f46;}
-.pct-mid{background:#fef3c7;color:#92400e;}
-.pct-high{background:#fee2e2;color:#991b1b;}
-/* Loading */
-#loadingOverlay{position:fixed;inset:0;background:#f1f3f8;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:12px;}
-.spinner{width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:spin .7s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
-#loadMsg{font-size:13px;color:#6b7280;}
-#errorBox{background:#fee2e2;color:#991b1b;border-radius:8px;padding:12px 16px;margin-bottom:14px;font-size:13px;display:none;}
-.btn-reload{background:#374151;color:#fff;border:none;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:600;cursor:pointer;margin-left:10px;}
-.btn-reload:hover{background:#1f2937;}
-@media(max-width:700px){
-  .metrics{grid-template-columns:1fr;}
-  .charts-row{grid-template-columns:1fr;}
-  .frow{grid-template-columns:1fr 1fr;}
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Google Sheets</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* Top bar */
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 10px; }
+    .top-bar h1 { font-size: 20px; font-weight: 600; color: #1a1a18; }
+    .sync-info { font-size: 12px; color: #888780; margin-top: 2px; }
+    .btn-refresh { background: #fff; border: 1px solid #d3d1c7; border-radius: 8px; padding: 8px 18px; font-size: 13px; cursor: pointer; color: #1a1a18; transition: background 0.15s; }
+    .btn-refresh:hover { background: #f1efe8; }
+
+    /* Metrics */
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+    .metric-card { background: #fff; border-radius: 10px; border: 1px solid #e8e6df; padding: 16px 18px; }
+    .metric-label { font-size: 11px; color: #888780; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .metric-value { font-size: 24px; font-weight: 600; color: #1a1a18; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .metric-sub { font-size: 11px; color: #b4b2a9; margin-top: 3px; }
+
+    /* Charts */
+    .charts-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 2rem; }
+    .chart-card { background: #fff; border: 1px solid #e8e6df; border-radius: 12px; padding: 16px 18px; }
+    .chart-title { font-size: 12px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+
+    /* Table section */
+    .section-title { font-size: 12px; font-weight: 500; color: #888780; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 10px; }
+    .filters { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+    .filters input, .filters select {
+      border: 1px solid #d3d1c7; border-radius: 8px; padding: 7px 12px; font-size: 13px;
+      background: #fff; color: #1a1a18; outline: none;
+    }
+    .filters input { flex: 1; min-width: 180px; }
+    .filters input:focus, .filters select:focus { border-color: #888780; }
+    .filters select { min-width: 140px; }
+    .status-bar { font-size: 12px; color: #b4b2a9; margin-bottom: 8px; }
+    .table-wrap { overflow-x: auto; border: 1px solid #e8e6df; border-radius: 12px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead th { background: #f5f5f3; padding: 10px 14px; text-align: left; font-weight: 500; color: #888780; font-size: 12px; border-bottom: 1px solid #e8e6df; white-space: nowrap; }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid #f1efe8; color: #1a1a18; vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #fafaf8; }
+
+    /* Pagination */
+    .page-controls { display: flex; gap: 8px; align-items: center; font-size: 13px; color: #888780; margin-top: 12px; }
+    .page-controls button { background: #fff; border: 1px solid #d3d1c7; border-radius: 8px; padding: 5px 14px; cursor: pointer; color: #1a1a18; font-size: 12px; }
+    .page-controls button:disabled { opacity: 0.4; cursor: default; }
+    .page-controls button:not(:disabled):hover { background: #f1efe8; }
+
+    /* Loading */
+    .loading-box { display: flex; align-items: center; gap: 12px; color: #888780; font-size: 14px; padding: 3rem 0; justify-content: center; }
+    .spinner { width: 20px; height: 20px; border: 2px solid #e8e6df; border-top-color: #888780; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box { background: #fff5f5; border: 1px solid #f09595; border-radius: 10px; padding: 14px 18px; color: #a32d2d; font-size: 13px; line-height: 1.6; }
+
+    /* Legend */
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; font-size: 11px; color: #888780; }
+    .chart-legend span { display: flex; align-items: center; gap: 4px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  </style>
 </head>
 <body>
+<div class="container">
 
-<!-- Overlay de carregamento -->
-<div id="loadingOverlay">
-  <div class="spinner"></div>
-  <div id="loadMsg">Carregando dados da planilha…</div>
-</div>
-
-<div class="db" id="appRoot" style="display:none">
-  <div id="errorBox"></div>
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <span id="lastUpdate" style="font-size:10px;color:#9ca3af;"></span>
-    <button class="btn-reload" onclick="loadCSV()">↺ Atualizar dados</button>
+  <div class="top-bar">
+    <div>
+      <h1 id="dash-title">Dashboard</h1>
+      <div class="sync-info" id="sync-info">Carregando dados...</div>
+    </div>
+    <button class="btn-refresh" onclick="loadData()">↺ Atualizar</button>
   </div>
-  <div class="tab-bar" id="tabBar"></div>
-  <div id="dashContent"></div>
+
+  <div id="loading-box" class="loading-box">
+    <div class="spinner"></div> Buscando dados da planilha...
+  </div>
+
+  <div id="error-box" style="display:none"></div>
+
+  <div id="dashboard-content" style="display:none">
+    <div class="metrics-grid" id="metrics-grid"></div>
+    <div class="charts-row" id="charts-row"></div>
+
+    <div class="section-title">Dados</div>
+    <div class="filters">
+      <input type="text" id="search-input" placeholder="Buscar em todas as colunas..." oninput="applyFilters()" />
+      <select id="col-filter-select" onchange="onColFilterChange()" style="display:none"></select>
+      <select id="col-filter-val" onchange="applyFilters()" style="display:none"></select>
+    </div>
+    <div class="status-bar" id="status-bar"></div>
+    <div class="table-wrap">
+      <table>
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+    <div class="page-controls" id="page-controls" style="display:none">
+      <button onclick="changePage(-1)" id="btn-prev">← Anterior</button>
+      <span id="page-info"></span>
+      <button onclick="changePage(1)" id="btn-next">Próxima →</button>
+    </div>
+  </div>
+
 </div>
 
 <script>
-// ── CONFIGURAÇÃO ─────────────────────────────────────────────────────────────
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?output=csv';
+  // ─── CONFIGURAÇÃO ───────────────────────────────────────────────────────────
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3u3PVaORUFqh2jnvRvN9WixGWGwqtaEx1Nt6wviX_PXstOvDD83SxAt0RR4X4C1s1Gl9bpfCqK8fz/pub?gid=1436090432&single=true&output=csv";
+  const PROXY   = "https://api.allorigins.win/raw?url=";
+  const PAGE_SIZE = 50;
+  // ────────────────────────────────────────────────────────────────────────────
 
-// Proxy para contornar CORS (o Google Sheets pub CSV já permite CORS, mas usamos fallback)
-const PROXY = 'https://corsproxy.io/?';
+  let allRows = [], headers = [], filtered = [], currentPage = 0;
+  let chartInstances = [];
+  const COLORS = ['#378ADD','#1D9E75','#D85A30','#D4537E','#7F77DD','#639922','#BA7517','#E24B4A'];
 
-const COLORS = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16','#f97316','#14b8a6','#a855f7'];
-
-let RAW = [];
-let PARCELAS = [];
-let currentParcela = -1;
-let barChart = null, donutChart = null;
-let lancamentos = [], lancId = 0;
-
-// ── CSV PARSER ────────────────────────────────────────────────────────────────
-/**
- * Converte texto CSV em array de objetos { nome, orcado:[], gasto:[] }
- *
- * Formato esperado na planilha (colunas):
- * Col 0      : Nome da categoria
- * Col 1–12   : Orçado P01…P12
- * Col 13–24  : Gasto  P01…P12
- *
- * A primeira linha pode ser cabeçalho (será ignorada se não for numérica).
- */
-function parseCSV(text) {
-  // Normaliza quebras de linha e divide em linhas
-  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim()!=='');
-
-  const result = [];
-  let parcCount = 0;
-
-  for (let i = 0; i < lines.length; i++) {
-    const cols = splitCSVLine(lines[i]);
-    if (!cols || cols.length < 3) continue;
-
-    const nome = cols[0].trim().replace(/^"|"$/g,'');
-    if (!nome) continue;
-
-    // Tenta detectar linha de cabeçalho
-    const secondCol = cols[1] ? cols[1].trim().replace(/^"|"$/g,'') : '';
-    if (i === 0 && isNaN(parseNumBR(secondCol)) && parseNumBR(secondCol) !== 0) {
-      // É cabeçalho — tenta detectar quantas parcelas tem
-      // (conta colunas numéricas a partir da col 1)
-      let cnt = 0;
-      for (let c = 1; c < cols.length; c++) {
-        const v = cols[c].trim().replace(/^"|"$/g,'');
-        if (v === '' || isNaN(parseNumBR(v))) break;
-        cnt++;
+  // CSV parser
+  function parseCSV(text) {
+    const lines = text.trim().split(/\r?\n/);
+    const parseRow = line => {
+      const result = []; let cur = ''; let inQ = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (c === '"') { inQ = !inQ; }
+        else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+        else { cur += c; }
       }
-      // Se linha de cabeçalho, pula
-      continue;
+      result.push(cur.trim()); return result;
+    };
+    const hdr = parseRow(lines[0]);
+    const rows = lines.slice(1).map(l => {
+      const vals = parseRow(l);
+      const obj = {};
+      hdr.forEach((h, i) => { obj[h] = vals[i] !== undefined ? vals[i] : ''; });
+      return obj;
+    }).filter(r => Object.values(r).some(v => v !== ''));
+    return { headers: hdr, rows };
+  }
+
+  function parseNum(v) {
+    return parseFloat(String(v).replace(/[R$%,\s]/g, '').replace(',', '.'));
+  }
+
+  function isNumericCol(col) {
+    const vals = allRows.map(r => r[col]).filter(v => v !== '');
+    if (!vals.length) return false;
+    return vals.filter(v => !isNaN(parseNum(v))).length / vals.length > 0.7;
+  }
+
+  // Metric cards
+  function buildMetrics() {
+    const grid = document.getElementById('metrics-grid');
+    grid.innerHTML = '';
+    const numCols = headers.filter(isNumericCol).slice(0, 5);
+    const cards = [
+      { label: 'Total de registros', value: allRows.length.toLocaleString('pt-BR'), sub: 'linhas na planilha' },
+      { label: 'Total de colunas',   value: headers.length, sub: 'campos' }
+    ];
+    numCols.forEach(col => {
+      const nums = allRows.map(r => parseNum(r[col])).filter(v => !isNaN(v));
+      if (!nums.length) return;
+      const sum = nums.reduce((a, b) => a + b, 0);
+      const avg = sum / nums.length;
+      const display = sum >= 1e6 ? (sum/1e6).toFixed(1)+'M' : sum >= 1e3 ? (sum/1e3).toFixed(1)+'k' : Math.round(sum).toLocaleString('pt-BR');
+      cards.push({ label: col, value: display, sub: 'média: ' + avg.toFixed(1) });
+    });
+    cards.forEach(c => {
+      const d = document.createElement('div'); d.className = 'metric-card';
+      d.innerHTML = `<div class="metric-label">${c.label}</div><div class="metric-value">${c.value}</div><div class="metric-sub">${c.sub||''}</div>`;
+      grid.appendChild(d);
+    });
+  }
+
+  // Charts
+  function buildCharts() {
+    chartInstances.forEach(c => c.destroy()); chartInstances = [];
+    const row = document.getElementById('charts-row'); row.innerHTML = '';
+    const numCols = headers.filter(isNumericCol);
+    const catCols = headers.filter(h => {
+      const uniq = new Set(allRows.map(r => r[h])).size;
+      return !isNumericCol(h) && uniq >= 2 && uniq <= 20;
+    });
+
+    // Bar chart: category x numeric
+    if (catCols.length && numCols.length) {
+      const cat = catCols[0], num = numCols[0];
+      const agg = {};
+      allRows.forEach(r => { const k = r[cat]||'(vazio)'; agg[k] = (agg[k]||0) + (parseNum(r[num])||0); });
+      const sorted = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      const card = document.createElement('div'); card.className = 'chart-card';
+      const h = Math.max(sorted.length * 38 + 60, 200);
+      card.innerHTML = `<div class="chart-title">${num} por ${cat}</div><div style="position:relative;height:${h}px"><canvas id="chart-bar" role="img" aria-label="Gráfico de barras ${num} por ${cat}"></canvas></div>`;
+      row.appendChild(card);
+      chartInstances.push(new Chart(document.getElementById('chart-bar'), {
+        type: 'bar',
+        data: { labels: sorted.map(e=>e[0]), datasets: [{ label: num, data: sorted.map(e=>Math.round(e[1]*10)/10), backgroundColor: '#378ADD', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { font: { size: 11 } } }, y: { ticks: { font: { size: 11 } } } } }
+      }));
     }
 
-    // Lê todos os números da linha (exceto col 0)
-    const nums = [];
-    for (let c = 1; c < cols.length; c++) {
-      const v = cols[c].trim().replace(/^"|"$/g,'');
-      nums.push(parseNumBR(v));
+    // Donut chart: distribution of first categorical column
+    if (catCols.length) {
+      const cat = catCols[0];
+      const agg = {};
+      allRows.forEach(r => { const k = r[cat]||'(vazio)'; agg[k] = (agg[k]||0)+1; });
+      const sorted = Object.entries(agg).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      const card = document.createElement('div'); card.className = 'chart-card';
+      const legendHTML = sorted.map((e,i)=>`<span><span class="legend-dot" style="background:${COLORS[i%COLORS.length]}"></span>${e[0]} (${e[1]})</span>`).join('');
+      card.innerHTML = `<div class="chart-title">Distribuição: ${cat}</div><div style="position:relative;height:200px"><canvas id="chart-donut" role="img" aria-label="Gráfico de rosca distribuição de ${cat}"></canvas></div><div class="chart-legend">${legendHTML}</div>`;
+      row.appendChild(card);
+      chartInstances.push(new Chart(document.getElementById('chart-donut'), {
+        type: 'doughnut',
+        data: { labels: sorted.map(e=>e[0]), datasets: [{ data: sorted.map(e=>e[1]), backgroundColor: COLORS }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      }));
     }
-
-    // Divide nums ao meio: primeira metade = orçado, segunda = gasto
-    const half = Math.floor(nums.length / 2);
-    const orcado = nums.slice(0, half);
-    const gasto  = nums.slice(half, half * 2);
-
-    if (orcado.length === 0) continue;
-
-    if (parcCount === 0) parcCount = orcado.length;
-
-    result.push({ nome, orcado, gasto });
   }
 
-  // Gera nomes de parcelas
-  const n = parcCount || (result[0] ? result[0].orcado.length : 12);
-  const parcelas = Array.from({length: n}, (_,i) => 'Parcela '+(String(i+1).padStart(2,'0')));
-
-  return { raw: result, parcelas };
-}
-
-function splitCSVLine(line) {
-  // Suporta campos entre aspas com vírgula ou ponto-e-vírgula como separador
-  const sep = line.includes(';') && !line.includes(',') ? ';' : ',';
-  const result = [];
-  let cur = '';
-  let inQuote = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQuote = !inQuote; }
-    else if (ch === sep && !inQuote) { result.push(cur); cur = ''; }
-    else { cur += ch; }
+  // Column filter
+  function buildColFilter() {
+    const sel = document.getElementById('col-filter-select');
+    const catCols = headers.filter(h => {
+      const uniq = new Set(allRows.map(r => r[h])).size;
+      return !isNumericCol(h) && uniq >= 2 && uniq <= 30;
+    });
+    if (!catCols.length) return;
+    sel.style.display = '';
+    sel.innerHTML = '<option value="">Filtrar por coluna...</option>' + catCols.map(h=>`<option>${h}</option>`).join('');
   }
-  result.push(cur);
-  return result;
-}
 
-function parseNumBR(s) {
-  if (s === null || s === undefined || s.trim() === '' || s.trim() === '-') return 0;
-  // Remove símbolo de moeda e espaços
-  let v = s.trim().replace(/[R$\s]/g,'');
-  // Formato BR: 1.234,56  →  1234.56
-  if (v.includes(',')) {
-    v = v.replace(/\./g,'').replace(',','.');
+  function onColFilterChange() {
+    const sel = document.getElementById('col-filter-select');
+    const val = document.getElementById('col-filter-val');
+    const col = sel.value;
+    if (!col) { val.style.display = 'none'; val.innerHTML = ''; }
+    else {
+      val.style.display = '';
+      const uniq = [...new Set(allRows.map(r=>r[col]))].filter(Boolean).sort();
+      val.innerHTML = '<option value="">Todos</option>' + uniq.map(v=>`<option>${v}</option>`).join('');
+    }
+    applyFilters();
   }
-  const n = parseFloat(v);
-  return isNaN(n) ? 0 : n;
-}
 
-// ── CARREGAR CSV ──────────────────────────────────────────────────────────────
-async function loadCSV() {
-  setLoading(true, 'Carregando dados da planilha…');
-  hideError();
+  // Filter + render
+  function applyFilters() {
+    const q   = document.getElementById('search-input').value.toLowerCase();
+    const col = document.getElementById('col-filter-select').value;
+    const val = document.getElementById('col-filter-val').value;
+    filtered = allRows.filter(row => {
+      const mQ = !q || Object.values(row).some(v => String(v).toLowerCase().includes(q));
+      const mF = !col || !val || row[col] === val;
+      return mQ && mF;
+    });
+    currentPage = 0;
+    renderTable();
+  }
 
-  // Tenta direto primeiro (Google Sheets pub CSV suporta CORS)
-  let text = null;
-  try {
-    const resp = await fetch(CSV_URL, { cache: 'no-store' });
-    if (resp.ok) text = await resp.text();
-  } catch(e) { text = null; }
+  function renderTable() {
+    const head = document.getElementById('table-head');
+    const body = document.getElementById('table-body');
+    const start = currentPage * PAGE_SIZE;
+    const page  = filtered.slice(start, start + PAGE_SIZE);
+    head.innerHTML = '<tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+    body.innerHTML = page.map(row => '<tr>' + headers.map(h=>`<td>${row[h]||''}</td>`).join('') + '</tr>').join('');
+    const total = filtered.length;
+    document.getElementById('status-bar').textContent = `Exibindo ${Math.min(start+1, total)}–${Math.min(start+PAGE_SIZE, total)} de ${total} registros`;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+    const pc = document.getElementById('page-controls');
+    if (totalPages > 1) {
+      pc.style.display = 'flex';
+      document.getElementById('page-info').textContent = `Página ${currentPage+1} de ${totalPages}`;
+      document.getElementById('btn-prev').disabled = currentPage === 0;
+      document.getElementById('btn-next').disabled = currentPage >= totalPages - 1;
+    } else { pc.style.display = 'none'; }
+  }
 
-  // Fallback: proxy CORS
-  if (!text) {
+  function changePage(dir) { currentPage += dir; renderTable(); }
+
+  // Main loader
+  async function loadData() {
+    document.getElementById('loading-box').style.display = 'flex';
+    document.getElementById('dashboard-content').style.display = 'none';
+    document.getElementById('error-box').style.display = 'none';
+    document.getElementById('sync-info').textContent = 'Carregando dados...';
     try {
-      const resp = await fetch(PROXY + encodeURIComponent(CSV_URL), { cache: 'no-store' });
-      if (resp.ok) text = await resp.text();
-    } catch(e) { text = null; }
-  }
-
-  if (!text) {
-    setLoading(false);
-    showError('Não foi possível carregar a planilha. Verifique se o link está publicado como CSV e tente novamente.');
-    return;
-  }
-
-  try {
-    const parsed = parseCSV(text);
-    if (!parsed.raw.length) throw new Error('Nenhuma categoria encontrada no CSV.');
-    RAW = parsed.raw;
-    PARCELAS = parsed.parcelas;
-    currentParcela = -1;
-    document.getElementById('lastUpdate').textContent =
-      'Última atualização: ' + new Date().toLocaleString('pt-BR');
-    setLoading(false);
-    document.getElementById('appRoot').style.display = '';
-    renderTabs();
-    renderDash();
-  } catch(e) {
-    setLoading(false);
-    showError('Erro ao processar os dados: ' + e.message);
-  }
-}
-
-function setLoading(on, msg) {
-  document.getElementById('loadingOverlay').style.display = on ? 'flex' : 'none';
-  if (msg) document.getElementById('loadMsg').textContent = msg;
-}
-
-function showError(msg) {
-  const box = document.getElementById('errorBox');
-  box.innerHTML = '⚠️ ' + msg + ' <button class="btn-reload" onclick="loadCSV()">Tentar novamente</button>';
-  box.style.display = 'block';
-  document.getElementById('appRoot').style.display = '';
-}
-
-function hideError() {
-  document.getElementById('errorBox').style.display = 'none';
-}
-
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function fmt(n){return'R$ '+n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function fmtPct(n){return n.toFixed(1)+'%';}
-
-function getParcelaData(pi){
-  if(pi === -1){
-    return RAW.map(c=>({
-      nome: c.nome,
-      orcado: c.orcado.reduce((a,b)=>a+b,0),
-      gasto:  c.gasto.reduce((a,b)=>a+b,0)
-    }));
-  }
-  return RAW.map(c=>({nome:c.nome, orcado:c.orcado[pi]||0, gasto:c.gasto[pi]||0}));
-}
-
-function getSummary(pi){
-  const cats = getParcelaData(pi);
-  let orc=0,gas=0;
-  cats.forEach(c=>{orc+=c.orcado;gas+=c.gasto;});
-  return{orc,gas,saldo:orc-gas};
-}
-
-function pctClass(p){
-  if(p>=100) return 'pct-high';
-  if(p>=70)  return 'pct-mid';
-  return 'pct-low';
-}
-
-// ── TABS ──────────────────────────────────────────────────────────────────────
-function renderTabs(){
-  const bar = document.getElementById('tabBar');
-  bar.innerHTML='';
-  const home = document.createElement('button');
-  home.className='tab home'+(currentParcela===-1?' active':'');
-  home.textContent='Resumo Geral';
-  home.onclick=()=>{currentParcela=-1;renderTabs();renderDash();};
-  bar.appendChild(home);
-  PARCELAS.forEach((p,i)=>{
-    const btn=document.createElement('button');
-    btn.className='tab'+(i===currentParcela?' active':'');
-    btn.textContent='P'+(i+1);
-    btn.title=p;
-    btn.onclick=()=>{currentParcela=i;renderTabs();renderDash();};
-    bar.appendChild(btn);
-  });
-}
-
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
-function renderDash(){
-  const el=document.getElementById('dashContent');
-  const pi=currentParcela;
-  const sum=getSummary(pi);
-  const cats=getParcelaData(pi);
-  const titulo=pi===-1?'Resumo Geral':PARCELAS[pi];
-
-  el.innerHTML=`
-  <div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:12px;">${titulo}</div>
-  <div class="metrics">
-    <div class="mcard">
-      <div class="mlabel">Total orçado</div>
-      <div class="mval">${fmt(sum.orc)}</div>
-      <div class="msub">Plano de trabalho</div>
-    </div>
-    <div class="mcard">
-      <div class="mlabel">Total gasto</div>
-      <div class="mval red">${fmt(sum.gas)}</div>
-      <div class="msub">Lançamentos registrados</div>
-    </div>
-    <div class="mcard">
-      <div class="mlabel">Saldo disponível</div>
-      <div class="mval ${sum.saldo>=0?'green':'red'}">${fmt(sum.saldo)}</div>
-      <div class="msub">Restante a gastar</div>
-    </div>
-  </div>
-
-  <div class="charts-row">
-    <div class="ccard">
-      <div class="ctitle">Orçado × Gasto × Saldo por categoria</div>
-      <div class="leg">
-        <span><span class="leg-sq" style="background:#3b82f6"></span>Orçado</span>
-        <span><span class="leg-sq" style="background:#10b981"></span>Gasto</span>
-        <span><span class="leg-sq" style="background:#f59e0b"></span>Saldo</span>
-      </div>
-      <div style="position:relative;height:200px;"><canvas id="barChart"></canvas></div>
-    </div>
-    <div class="ccard">
-      <div class="ctitle">% executado por categoria</div>
-      <div style="position:relative;height:140px;"><canvas id="donutChart"></canvas></div>
-      <div class="donut-legend" id="donutLegend"></div>
-    </div>
-  </div>
-
-  <div class="tcard">
-    <div class="ttitle">Detalhamento por categoria</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Categoria</th>
-          <th>Orçado</th>
-          <th>Gasto</th>
-          <th>Saldo</th>
-          <th>% Exec.</th>
-          <th>Progresso</th>
-        </tr>
-      </thead>
-      <tbody id="catTableBody"></tbody>
-    </table>
-  </div>
-
-  <div class="fcard">
-    <div class="ttitle">+ Registrar nova despesa <span style="font-size:10px;font-weight:400;color:#9ca3af;">(lançamento manual — não altera a planilha)</span></div>
-    <div class="frow">
-      <div><div class="flabel">Data</div><input type="date" id="fData" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div><div class="flabel">Categoria</div><select id="fCat">${cats.map(c=>`<option>${c.nome}</option>`).join('')}</select></div>
-      <div><div class="flabel">Descrição / histórico</div><input type="text" id="fDesc" placeholder="Ex: NF-046497 Atacadão"></div>
-      <div><div class="flabel">Valor (R$)</div><input type="number" id="fVal" placeholder="0,00" step="0.01" min="0"></div>
-    </div>
-    <button class="btn-launch" onclick="lancarDespesa()">Lançar despesa</button>
-  </div>
-
-  <div class="tcard">
-    <div class="ttitle">Lançamentos manuais${pi===-1?' — todas as parcelas':' — '+titulo}</div>
-    <table>
-      <thead><tr><th>Data</th><th>Categoria</th><th>Descrição</th><th>Valor</th><th>Origem</th><th></th></tr></thead>
-      <tbody id="lancTableBody"></tbody>
-    </table>
-  </div>`;
-
-  const catBody=document.getElementById('catTableBody');
-  cats.forEach((c,i)=>{
-    const saldo=c.orcado-c.gasto;
-    const pct=c.orcado>0?(c.gasto/c.orcado*100):0;
-    const color=COLORS[i%COLORS.length];
-    const tr=document.createElement('tr');
-    tr.innerHTML=`
-      <td><span class="cat-name">${c.nome}</span></td>
-      <td style="white-space:nowrap">${fmt(c.orcado)}</td>
-      <td style="white-space:nowrap"><span class="${c.gasto>0?'tag-blue':''}">${fmt(c.gasto)}</span></td>
-      <td style="white-space:nowrap"><span class="${saldo>=0?'tag-green':'tag-red'}">${fmt(saldo)}</span></td>
-      <td><span class="pct-badge ${pctClass(pct)}">${fmtPct(pct)}</span></td>
-      <td style="min-width:100px">
-        <div class="prog-bg">
-          <div class="prog-bar" style="width:${Math.min(pct,100).toFixed(1)}%;background:${pct>=100?'#ef4444':pct>=70?'#f59e0b':color};"></div>
-        </div>
-      </td>`;
-    catBody.appendChild(tr);
-  });
-
-  renderLancamentos();
-
-  setTimeout(()=>{
-    if(barChart) barChart.destroy();
-    if(donutChart) donutChart.destroy();
-
-    const barCtx=document.getElementById('barChart');
-    if(barCtx){
-      barChart=new Chart(barCtx,{
-        type:'bar',
-        data:{
-          labels:cats.map(c=>c.nome.length>16?c.nome.slice(0,15)+'…':c.nome),
-          datasets:[
-            {label:'Orçado',data:cats.map(c=>c.orcado),backgroundColor:'#3b82f6',borderRadius:3},
-            {label:'Gasto', data:cats.map(c=>c.gasto), backgroundColor:'#10b981',borderRadius:3},
-            {label:'Saldo', data:cats.map(c=>Math.max(c.orcado-c.gasto,0)),backgroundColor:'#f59e0b',borderRadius:3}
-          ]
-        },
-        options:{
-          responsive:true,maintainAspectRatio:false,
-          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': '+fmt(ctx.parsed.y)}}},
-          scales:{
-            x:{grid:{display:false},ticks:{font:{size:9},color:'#9ca3af',autoSkip:false,maxRotation:35}},
-            y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#9ca3af',callback:v=>'R$'+(v>=1000?(v/1000).toFixed(0)+'k':v)}}
-          }
-        }
-      });
-    }
-
-    const donutCtx=document.getElementById('donutChart');
-    if(donutCtx){
-      const filtered=cats.filter(c=>c.gasto>0);
-      const gastos=filtered.map(c=>c.gasto);
-      const labels=filtered.map(c=>c.nome);
-      const colors=filtered.map((_,i)=>COLORS[i%COLORS.length]);
-      donutChart=new Chart(donutCtx,{
-        type:'doughnut',
-        data:{labels,datasets:[{data:gastos,backgroundColor:colors,borderWidth:2,borderColor:'#fff'}]},
-        options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.label+': '+fmt(ctx.parsed)}}}}
-      });
-      const leg=document.getElementById('donutLegend');
-      if(leg){
-        const total=gastos.reduce((a,b)=>a+b,0);
-        leg.innerHTML=labels.map((l,i)=>`
-          <div class="donut-legend-item">
-            <span><span class="donut-dot" style="background:${colors[i]}"></span>${l}</span>
-            <span>${total>0?fmtPct(gastos[i]/total*100):'0%'}</span>
-          </div>`).join('');
+      let text;
+      try {
+        const r = await fetch(CSV_URL);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        text = await r.text();
+      } catch(e) {
+        // Fallback via proxy (CORS)
+        const r2 = await fetch(PROXY + encodeURIComponent(CSV_URL));
+        if (!r2.ok) throw new Error('Proxy falhou: ' + r2.status);
+        text = await r2.text();
       }
+      const parsed = parseCSV(text);
+      headers = parsed.headers; allRows = parsed.rows; filtered = [...allRows];
+      buildMetrics();
+      buildColFilter();
+      buildCharts();
+      renderTable();
+      document.getElementById('loading-box').style.display = 'none';
+      document.getElementById('dashboard-content').style.display = '';
+      document.getElementById('dash-title').textContent = 'Dashboard — Google Sheets';
+      document.getElementById('sync-info').textContent = 'Atualizado em ' + new Date().toLocaleString('pt-BR') + ' · ' + allRows.length + ' registros';
+    } catch(err) {
+      document.getElementById('loading-box').style.display = 'none';
+      const eb = document.getElementById('error-box');
+      eb.style.display = '';
+      eb.innerHTML = '<strong>Erro ao carregar dados:</strong> ' + err.message + '<br><small>Verifique se a planilha está publicada como CSV e tente novamente.</small>';
     }
-  },50);
-}
-
-// ── LANÇAMENTOS ───────────────────────────────────────────────────────────────
-function renderLancamentos(){
-  const body=document.getElementById('lancTableBody');
-  if(!body)return;
-  body.innerHTML='';
-  const lancs=currentParcela===-1?lancamentos:lancamentos.filter(l=>l.parcela===currentParcela);
-  if(!lancs.length){
-    body.innerHTML='<tr><td colspan="6" style="color:#9ca3af;text-align:center;padding:16px;">Nenhum lançamento registrado</td></tr>';
-    return;
   }
-  lancs.forEach(l=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${l.data}</td><td>${l.cat}</td><td>${l.desc||'—'}</td><td style="color:#dc2626;font-weight:600">${fmt(l.val)}</td><td><span class="badge-manual">Manual</span></td><td><button class="del-btn" onclick="deleteLanc(${l.id})">✕</button></td>`;
-    body.appendChild(tr);
-  });
-}
 
-function lancarDespesa(){
-  const data=document.getElementById('fData').value;
-  const cat=document.getElementById('fCat').value;
-  const desc=document.getElementById('fDesc').value;
-  const val=parseFloat(document.getElementById('fVal').value)||0;
-  if(!val||val<=0){alert('Informe um valor válido.');return;}
-  lancamentos.push({id:lancId++,parcela:currentParcela,data,cat,desc,val});
-  document.getElementById('fVal').value='';
-  document.getElementById('fDesc').value='';
-  renderLancamentos();
-}
-
-function deleteLanc(id){
-  lancamentos=lancamentos.filter(l=>l.id!==id);
-  renderLancamentos();
-}
-
-// ── INICIAR ───────────────────────────────────────────────────────────────────
-loadCSV();
+  loadData();
 </script>
 </body>
 </html>
